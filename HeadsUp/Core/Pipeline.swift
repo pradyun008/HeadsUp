@@ -7,6 +7,7 @@ import VideoToolbox
 /// Thresholds for the whole pipeline. All configurable from Settings.
 struct PipelineConfig: Sendable, Equatable {
   var minConfidence: Float = 0.4
+  var tracker = TrackerConfig()
 }
 
 /// FrameSource → Detector → (Tracker → RiskEstimator → AlertPolicy, added in later steps).
@@ -19,6 +20,8 @@ final class Pipeline: @unchecked Sendable {
     /// The processed frame, for display. Boxes line up with this exact image.
     let image: CGImage?
     let detections: [Detection]
+    /// Tracked objects with stable IDs, including ones coasting through a short gap.
+    let tracks: [Track]
     /// Time spent in the detector for this frame, milliseconds. 0 for scripted frames.
     let detectionMs: Double
     /// Frames per second arriving from the source.
@@ -38,6 +41,9 @@ final class Pipeline: @unchecked Sendable {
   private var processed = FPSMeter()
   private var dropped = 0
   private var _config = PipelineConfig()
+  /// Touched only on `queue`.
+  private var tracker = Tracker()
+  private var needsReset = false
 
   init(detector: Detector?) { self.detector = detector }
 
@@ -51,6 +57,7 @@ final class Pipeline: @unchecked Sendable {
       arrivals.reset()
       processed.reset()
       dropped = 0
+      needsReset = true
     }
   }
 
@@ -65,6 +72,8 @@ final class Pipeline: @unchecked Sendable {
     }
     busy = true
     let config = _config
+    let resetNow = needsReset
+    needsReset = false
     lock.unlock()
 
     queue.async { [self] in
@@ -77,6 +86,10 @@ final class Pipeline: @unchecked Sendable {
         detections = (try? detector.detect(frame.pixelBuffer, minConfidence: config.minConfidence)) ?? []
         detectionMs = (CACurrentMediaTime() - start) * 1000
       }
+      if resetNow { tracker.reset() }
+      tracker.config = config.tracker
+      let tracks = tracker.update(detections, at: frame.timestamp)
+
       var image: CGImage?
       VTCreateCGImageFromCVPixelBuffer(frame.pixelBuffer, options: nil, imageOut: &image)
 
@@ -88,7 +101,7 @@ final class Pipeline: @unchecked Sendable {
 
       onOutput?(
         Output(
-          timestamp: frame.timestamp, image: image, detections: detections, detectionMs: detectionMs,
+          timestamp: frame.timestamp, image: image, detections: detections, tracks: tracks, detectionMs: detectionMs,
           sourceFPS: sourceFPS, processedFPS: processedFPS, droppedFrames: droppedNow))
     }
   }

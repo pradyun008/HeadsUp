@@ -16,10 +16,12 @@
 		48CADD26D11B5F55EBEE3358 /* MWDATMockDevice in Frameworks */ = {isa = PBXBuildFile; productRef = 11F690C69FD33BAF81E6F8A9 /* MWDATMockDevice */; };
 		4B07B5CBF3295AC5F03C1EBF /* PhoneCameraFrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CC60AD2BE708A1DE540ACF /* PhoneCameraFrameSource.swift */; };
 		6855D635A2201C3462479CC2 /* DebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFAD5E9DFBC21806B4F13D1B /* DebugView.swift */; };
+		8937990E76E896B2919C5EE3 /* TrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D18C9A6DE5741F3F61A581 /* TrackerTests.swift */; };
 		8D3A011CDB758DB95A0E18E0 /* Detection.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA5C482A2525D385B0B11267 /* Detection.swift */; };
 		940F3B04C803447FF3129F0E /* bus.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F95833BA860302D8D10E31D0 /* bus.jpg */; };
 		963EBFB1DBE4102781D25621 /* ScenarioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E638EDAE9868F1D0D61572D /* ScenarioTests.swift */; };
 		970384742996C1CCBA9A307B /* DetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D274F58ACC6B89AB8C297C85 /* DetectorTests.swift */; };
+		9A806B8BD3E2EFE065CDA21C /* Tracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A36B781F54567A61B821601 /* Tracker.swift */; };
 		A28025E3A034F25CF02EC834 /* GlassesFrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A81BF0119B838ADBC5003BB /* GlassesFrameSource.swift */; };
 		AA6AD4658F7F031F6E1C124B /* FPSMeterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999ED9845F2947A8BC4F2CBD /* FPSMeterTests.swift */; };
 		B509175B28DD13F90AA15C73 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB36975701A88C4F8CC081D2 /* MainView.swift */; };
@@ -42,9 +44,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		07D18C9A6DE5741F3F61A581 /* TrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerTests.swift; sourceTree = "<group>"; };
 		1C8E86A2A5D810A14EB462B7 /* yolo11n.mlpackage */ = {isa = PBXFileReference; path = yolo11n.mlpackage; sourceTree = "<group>"; };
 		20F15D03B3D1D04D59F91969 /* FrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameSource.swift; sourceTree = "<group>"; };
 		25AA5B442B811C270B369D47 /* MockGlasses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockGlasses.swift; sourceTree = "<group>"; };
+		3A36B781F54567A61B821601 /* Tracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tracker.swift; sourceTree = "<group>"; };
 		3E638EDAE9868F1D0D61572D /* ScenarioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenarioTests.swift; sourceTree = "<group>"; };
 		475BB8DAA2B4611B953BAACB /* ScenarioFrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenarioFrameSource.swift; sourceTree = "<group>"; };
 		60CC60AD2BE708A1DE540ACF /* PhoneCameraFrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneCameraFrameSource.swift; sourceTree = "<group>"; };
@@ -117,6 +121,7 @@
 				20F15D03B3D1D04D59F91969 /* FrameSource.swift */,
 				A719907EA705A96255520CEA /* Pipeline.swift */,
 				9B4F8FB47F6A8DEE6CA3C956 /* Scenario.swift */,
+				3A36B781F54567A61B821601 /* Tracker.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -158,6 +163,7 @@
 				D274F58ACC6B89AB8C297C85 /* DetectorTests.swift */,
 				999ED9845F2947A8BC4F2CBD /* FPSMeterTests.swift */,
 				3E638EDAE9868F1D0D61572D /* ScenarioTests.swift */,
+				07D18C9A6DE5741F3F61A581 /* TrackerTests.swift */,
 				CD806CBE089AC4BD156555D4 /* Fixtures */,
 			);
 			path = HeadsUpTests;
@@ -293,6 +299,7 @@
 				970384742996C1CCBA9A307B /* DetectorTests.swift in Sources */,
 				AA6AD4658F7F031F6E1C124B /* FPSMeterTests.swift in Sources */,
 				963EBFB1DBE4102781D25621 /* ScenarioTests.swift in Sources */,
+				8937990E76E896B2919C5EE3 /* TrackerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,6 +320,7 @@
 				F2CDD64E89CCF5EF0DBDDF29 /* Pipeline.swift in Sources */,
 				2B282898F6D8585EA81C413B /* Scenario.swift in Sources */,
 				47AEA3838F445BB3062CEF68 /* ScenarioFrameSource.swift in Sources */,
+				9A806B8BD3E2EFE065CDA21C /* Tracker.swift in Sources */,
 				C12AA3FC0FB18DC33CE1FC8B /* yolo11n.mlpackage in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

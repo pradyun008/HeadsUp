@@ -6,7 +6,7 @@ struct DebugView: View {
 
   var body: some View {
     VStack(spacing: 12) {
-      FrameOverlayView(image: model.preview, detections: model.detections)
+      FrameOverlayView(image: model.preview, tracks: model.tracks)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
       VStack(alignment: .leading, spacing: 4) {
@@ -20,7 +20,7 @@ struct DebugView: View {
             model.fps, model.processedFPS, model.detectionMs, model.droppedFrames)
         )
         .font(.callout.monospacedDigit())
-        Text("\(model.detections.count) objects · \(Int(model.frameSize.width))×\(Int(model.frameSize.height))")
+        Text("\(model.tracks.count) tracked · \(model.detections.count) detected · \(Int(model.frameSize.width))×\(Int(model.frameSize.height))")
           .font(.callout.monospacedDigit())
         Text("Left and right are camera-relative: the camera turns with the head.")
           .font(.footnote).foregroundStyle(.secondary)
@@ -40,7 +40,7 @@ struct DebugView: View {
 /// A frame with detection boxes drawn over it.
 struct FrameOverlayView: View {
   let image: CGImage?
-  let detections: [Detection]
+  let tracks: [Track]
 
   var body: some View {
     ZStack {
@@ -50,7 +50,7 @@ struct FrameOverlayView: View {
           .resizable()
           .overlay {
             Canvas { context, size in
-              for d in detections { draw(d, in: &context, size: size) }
+              for t in tracks { draw(t, in: &context, size: size) }
             }
           }
       } else {
@@ -60,7 +60,7 @@ struct FrameOverlayView: View {
     .aspectRatio(aspect, contentMode: .fit)
     .clipShape(RoundedRectangle(cornerRadius: 12))
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel(image == nil ? "Camera view, no video" : "Camera view, \(detections.count) objects detected")
+    .accessibilityLabel(image == nil ? "Camera view, no video" : "Camera view, \(tracks.count) objects tracked")
   }
 
   private var aspect: CGFloat {
@@ -68,14 +68,17 @@ struct FrameOverlayView: View {
     return CGFloat(image.width) / CGFloat(image.height)
   }
 
-  private func draw(_ d: Detection, in context: inout GraphicsContext, size: CGSize) {
+  private func draw(_ d: Track, in context: inout GraphicsContext, size: CGSize) {
     // x: −1…+1 → 0…width. y: 0 (top)…1 (bottom) → 0…height.
     let rect = CGRect(
       x: (d.left + 1) / 2 * size.width, y: d.top * size.height,
-      width: d.width / 2 * size.width, height: d.height * size.height)
+      width: (d.right - d.left) / 2 * size.width, height: (d.bottom - d.top) * size.height)
     let color = Color.gray  // grey = not judged yet; risk colours arrive with the RiskEstimator
-    context.stroke(Path(rect), with: .color(color), lineWidth: 3)
-    let label = Text("\(d.objectClass.rawValue) \(Int(d.confidence * 100))%")
+    // Dashed outline = coasting: not seen this frame, position predicted from its last motion.
+    context.stroke(
+      Path(rect), with: .color(color),
+      style: StrokeStyle(lineWidth: 3, dash: d.isCoasting ? [6, 5] : []))
+    let label = Text("#\(d.id) \(d.objectClass.rawValue)\(d.isCoasting ? " (coasting)" : "")")
       .font(.caption.bold()).foregroundStyle(.white)
     let resolved = context.resolve(label)
     let textSize = resolved.measure(in: size)

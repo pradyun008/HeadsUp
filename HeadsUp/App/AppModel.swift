@@ -43,6 +43,7 @@ final class AppModel {
   private(set) var preview: CGImage?
   private(set) var frameSize: CGSize = .zero
   private(set) var detections: [Detection] = []
+  private(set) var tracks: [Track] = []
   private(set) var processedFPS = 0.0
   private(set) var detectionMs = 0.0
   private(set) var droppedFrames = 0
@@ -109,6 +110,7 @@ final class AppModel {
     isWatching = false
     preview = nil
     detections = []
+    tracks = []
     fps = 0
     processedFPS = 0
     UIApplication.shared.isIdleTimerDisabled = false
@@ -133,6 +135,7 @@ final class AppModel {
     detectionMs = detectionMs == 0 ? output.detectionMs : 0.9 * detectionMs + 0.1 * output.detectionMs
     droppedFrames = output.droppedFrames
     detections = output.detections
+    tracks = output.tracks
     if let image = output.image {
       preview = image
       frameSize = CGSize(width: image.width, height: image.height)
