@@ -21,9 +21,28 @@ struct Scenario: Sendable {
     var endTime: Double
   }
 
+  /// A head turn: the whole image content shifts sideways between `start` and `end`.
+  struct HeadTurn: Sendable {
+    var start: Double
+    var end: Double
+    /// Total content shift in normalized x units. Positive = content moves right (head turns left).
+    var shift: Double
+  }
+
   var name: String
   var duration: Double
   var actors: [Actor]
+  /// Should sum to zero shift so the scene loops cleanly.
+  var headTurns: [HeadTurn] = []
+
+  /// Where the image content sits, relative to looking straight ahead, at `time`.
+  func contentOffset(at time: Double) -> Double {
+    let t = time.truncatingRemainder(dividingBy: duration)
+    return headTurns.reduce(0) { total, turn in
+      let progress = min(1, max(0, (t - turn.start) / (turn.end - turn.start)))
+      return total + turn.shift * progress
+    }
+  }
 
   /// Focal length in normalized x units: 1 / tan(half horizontal field of view).
   /// 35° half-FOV is a rough match for a wide portrait camera.
@@ -36,16 +55,17 @@ struct Scenario: Sendable {
   /// Detections at `time` seconds into the scenario (wraps at `duration`).
   func detections(at time: Double) -> [Detection] {
     let t = time.truncatingRemainder(dividingBy: duration)
+    let offset = contentOffset(at: time)
     return actors.compactMap { actor in
       guard t >= actor.startTime, t <= actor.endTime else { return nil }
       let dt = t - actor.startTime
-      return Self.project(actor, x: actor.x + actor.vx * dt, z: actor.z + actor.vz * dt)
+      return Self.project(actor, x: actor.x + actor.vx * dt, z: actor.z + actor.vz * dt, offset: offset)
     }
   }
 
-  static func project(_ actor: Actor, x: Double, z: Double) -> Detection? {
+  static func project(_ actor: Actor, x: Double, z: Double, offset: Double = 0) -> Detection? {
     guard z > nearPlane else { return nil }
-    let cx = focal * x / z
+    let cx = focal * x / z + offset
     let halfW = focal * actor.width / (2 * z)
     let h = focal * actor.height / z / heightInXUnits
     // Feet a little below the horizon (camera at head height looking level).
@@ -95,5 +115,22 @@ extension Scenario {
     name: "Crosses far away", duration: 10,
     actors: [person(x: -6, z: 10, vx: 1.4, vz: 0, from: 0.5, to: 9)])
 
-  static let all: [Scenario] = [.demo, .walksToward, .walksPast, .bikeFromLeft, .crossesFar]
+  /// Someone walks away from the wearer.
+  static let walksAway = Scenario(
+    name: "Walks away", duration: 10,
+    actors: [person(x: 0, z: 3, vz: 1.4, from: 0.5, to: 9)])
+
+  /// A quick glance to the side and back (0.3 s each way) starting at `time`.
+  static func glance(at time: Double, shift: Double = 0.25) -> [HeadTurn] {
+    [HeadTurn(start: time, end: time + 0.3, shift: shift), HeadTurn(start: time + 0.8, end: time + 1.1, shift: -shift)]
+  }
+
+  /// Someone walks straight at the wearer while the wearer glances aside and back.
+  static let towardWithGlance = Scenario(
+    name: "Toward, with a glance aside", duration: 10,
+    actors: [person(x: 0, z: 12, vz: -1.4, from: 0.5, to: 9)], headTurns: glance(at: 5.5))
+
+  static let all: [Scenario] = [
+    .demo, .walksToward, .walksPast, .bikeFromLeft, .crossesFar, .walksAway, .towardWithGlance,
+  ]
 }

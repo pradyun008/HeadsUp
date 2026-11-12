@@ -9,6 +9,8 @@ struct Frame: @unchecked Sendable {
   let timestamp: CFTimeInterval
   /// Set only by the scripted scene source: detections to use instead of running the detector.
   var scriptedDetections: [Detection]? = nil
+  /// Scripted scenes only: global image shift since the previous frame (a scripted head turn).
+  var scriptedShift: Double = 0
 }
 
 enum FrameSourceStatus: Equatable {

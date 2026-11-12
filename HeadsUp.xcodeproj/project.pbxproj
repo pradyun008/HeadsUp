@@ -10,12 +10,15 @@
 		0DF76284A0D40EBA28097EC7 /* mock_feed.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 927EEEC02AE4E6D3992A198D /* mock_feed.mp4 */; };
 		1AF2E0E522162ABFEB52DCE3 /* MockGlasses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25AA5B442B811C270B369D47 /* MockGlasses.swift */; };
 		1E82C0F89E0C67FACB99937F /* HeadsUpApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2AE84CF942FDB4369E8B8B4 /* HeadsUpApp.swift */; };
+		2920C2192E1E40F2595C9B8B /* HeadMotionEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2F597E0FB634D85B038E3AE /* HeadMotionEstimator.swift */; };
 		2B282898F6D8585EA81C413B /* Scenario.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B4F8FB47F6A8DEE6CA3C956 /* Scenario.swift */; };
 		388F02700A1A61A17D450DF8 /* MWDATCamera in Frameworks */ = {isa = PBXBuildFile; productRef = C75AF68F784AF3FA4B965E1B /* MWDATCamera */; };
+		422E2AFBD62F8F269CA2231C /* RiskEstimatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9E030751B218E1DC844CFF /* RiskEstimatorTests.swift */; };
 		47AEA3838F445BB3062CEF68 /* ScenarioFrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475BB8DAA2B4611B953BAACB /* ScenarioFrameSource.swift */; };
 		48CADD26D11B5F55EBEE3358 /* MWDATMockDevice in Frameworks */ = {isa = PBXBuildFile; productRef = 11F690C69FD33BAF81E6F8A9 /* MWDATMockDevice */; };
 		4B07B5CBF3295AC5F03C1EBF /* PhoneCameraFrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CC60AD2BE708A1DE540ACF /* PhoneCameraFrameSource.swift */; };
 		6855D635A2201C3462479CC2 /* DebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFAD5E9DFBC21806B4F13D1B /* DebugView.swift */; };
+		782149C638D336BACFC5A034 /* RiskEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F9F0A690D2DAD38DF15BC8 /* RiskEstimator.swift */; };
 		8937990E76E896B2919C5EE3 /* TrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D18C9A6DE5741F3F61A581 /* TrackerTests.swift */; };
 		8D3A011CDB758DB95A0E18E0 /* Detection.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA5C482A2525D385B0B11267 /* Detection.swift */; };
 		940F3B04C803447FF3129F0E /* bus.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F95833BA860302D8D10E31D0 /* bus.jpg */; };
@@ -29,6 +32,7 @@
 		C12AA3FC0FB18DC33CE1FC8B /* yolo11n.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 1C8E86A2A5D810A14EB462B7 /* yolo11n.mlpackage */; };
 		DFAE8C6A1A495B7694C8197E /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D703D6BE9BDD486C97F20C /* AppModel.swift */; };
 		E385EE7674C0079ABB3D89F2 /* FrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20F15D03B3D1D04D59F91969 /* FrameSource.swift */; };
+		E7B442CCFF0C18AEB6493FF8 /* HeadMotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E51C5F42A3E35C2D7BCC298A /* HeadMotionTests.swift */; };
 		E8278660650B9D30A65AE75A /* MWDATCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6AAAF32E3D8D09B7B90C09A7 /* MWDATCore */; };
 		F2CDD64E89CCF5EF0DBDDF29 /* Pipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A719907EA705A96255520CEA /* Pipeline.swift */; };
 /* End PBXBuildFile section */
@@ -60,12 +64,16 @@
 		9B4F8FB47F6A8DEE6CA3C956 /* Scenario.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scenario.swift; sourceTree = "<group>"; };
 		A4D703D6BE9BDD486C97F20C /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		A719907EA705A96255520CEA /* Pipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pipeline.swift; sourceTree = "<group>"; };
+		AE9E030751B218E1DC844CFF /* RiskEstimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiskEstimatorTests.swift; sourceTree = "<group>"; };
 		CB36975701A88C4F8CC081D2 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		D274F58ACC6B89AB8C297C85 /* DetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetectorTests.swift; sourceTree = "<group>"; };
+		D2F597E0FB634D85B038E3AE /* HeadMotionEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadMotionEstimator.swift; sourceTree = "<group>"; };
 		E2AE84CF942FDB4369E8B8B4 /* HeadsUpApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadsUpApp.swift; sourceTree = "<group>"; };
+		E51C5F42A3E35C2D7BCC298A /* HeadMotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadMotionTests.swift; sourceTree = "<group>"; };
 		EA5C482A2525D385B0B11267 /* Detection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Detection.swift; sourceTree = "<group>"; };
 		EFAD5E9DFBC21806B4F13D1B /* DebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugView.swift; sourceTree = "<group>"; };
 		F52DC656B69451607AB1C7DF /* Detector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Detector.swift; sourceTree = "<group>"; };
+		F6F9F0A690D2DAD38DF15BC8 /* RiskEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiskEstimator.swift; sourceTree = "<group>"; };
 		F95833BA860302D8D10E31D0 /* bus.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = bus.jpg; sourceTree = "<group>"; };
 		FA489F41A2E98F7DF87E857F /* HeadsUpTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HeadsUpTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -119,7 +127,9 @@
 				EA5C482A2525D385B0B11267 /* Detection.swift */,
 				F52DC656B69451607AB1C7DF /* Detector.swift */,
 				20F15D03B3D1D04D59F91969 /* FrameSource.swift */,
+				D2F597E0FB634D85B038E3AE /* HeadMotionEstimator.swift */,
 				A719907EA705A96255520CEA /* Pipeline.swift */,
+				F6F9F0A690D2DAD38DF15BC8 /* RiskEstimator.swift */,
 				9B4F8FB47F6A8DEE6CA3C956 /* Scenario.swift */,
 				3A36B781F54567A61B821601 /* Tracker.swift */,
 			);
@@ -162,6 +172,8 @@
 			children = (
 				D274F58ACC6B89AB8C297C85 /* DetectorTests.swift */,
 				999ED9845F2947A8BC4F2CBD /* FPSMeterTests.swift */,
+				E51C5F42A3E35C2D7BCC298A /* HeadMotionTests.swift */,
+				AE9E030751B218E1DC844CFF /* RiskEstimatorTests.swift */,
 				3E638EDAE9868F1D0D61572D /* ScenarioTests.swift */,
 				07D18C9A6DE5741F3F61A581 /* TrackerTests.swift */,
 				CD806CBE089AC4BD156555D4 /* Fixtures */,
@@ -298,6 +310,8 @@
 			files = (
 				970384742996C1CCBA9A307B /* DetectorTests.swift in Sources */,
 				AA6AD4658F7F031F6E1C124B /* FPSMeterTests.swift in Sources */,
+				E7B442CCFF0C18AEB6493FF8 /* HeadMotionTests.swift in Sources */,
+				422E2AFBD62F8F269CA2231C /* RiskEstimatorTests.swift in Sources */,
 				963EBFB1DBE4102781D25621 /* ScenarioTests.swift in Sources */,
 				8937990E76E896B2919C5EE3 /* TrackerTests.swift in Sources */,
 			);
@@ -313,11 +327,13 @@
 				B7DF1C883D9382186D1C1648 /* Detector.swift in Sources */,
 				E385EE7674C0079ABB3D89F2 /* FrameSource.swift in Sources */,
 				A28025E3A034F25CF02EC834 /* GlassesFrameSource.swift in Sources */,
+				2920C2192E1E40F2595C9B8B /* HeadMotionEstimator.swift in Sources */,
 				1E82C0F89E0C67FACB99937F /* HeadsUpApp.swift in Sources */,
 				B509175B28DD13F90AA15C73 /* MainView.swift in Sources */,
 				1AF2E0E522162ABFEB52DCE3 /* MockGlasses.swift in Sources */,
 				4B07B5CBF3295AC5F03C1EBF /* PhoneCameraFrameSource.swift in Sources */,
 				F2CDD64E89CCF5EF0DBDDF29 /* Pipeline.swift in Sources */,
+				782149C638D336BACFC5A034 /* RiskEstimator.swift in Sources */,
 				2B282898F6D8585EA81C413B /* Scenario.swift in Sources */,
 				47AEA3838F445BB3062CEF68 /* ScenarioFrameSource.swift in Sources */,
 				9A806B8BD3E2EFE065CDA21C /* Tracker.swift in Sources */,

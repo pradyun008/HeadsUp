@@ -44,6 +44,8 @@ final class AppModel {
   private(set) var frameSize: CGSize = .zero
   private(set) var detections: [Detection] = []
   private(set) var tracks: [Track] = []
+  private(set) var risk = RiskFrame()
+  var corridor: Double { pipeline.config.risk.corridor }
   private(set) var processedFPS = 0.0
   private(set) var detectionMs = 0.0
   private(set) var droppedFrames = 0
@@ -111,6 +113,7 @@ final class AppModel {
     preview = nil
     detections = []
     tracks = []
+    risk = RiskFrame()
     fps = 0
     processedFPS = 0
     UIApplication.shared.isIdleTimerDisabled = false
@@ -136,6 +139,7 @@ final class AppModel {
     droppedFrames = output.droppedFrames
     detections = output.detections
     tracks = output.tracks
+    risk = output.risk
     if let image = output.image {
       preview = image
       frameSize = CGSize(width: image.width, height: image.height)

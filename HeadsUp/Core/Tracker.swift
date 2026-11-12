@@ -76,14 +76,15 @@ struct Tracker: Sendable {
 
   /// Feed one frame's detections. Returns all live tracks, including coasting ones.
   @discardableResult
-  mutating func update(_ detections: [Detection], at time: Double) -> [Track] {
+  mutating func update(_ detections: [Detection], at time: Double, frameShift: Double = 0) -> [Track] {
     let dt = max(0, time - (lastTime ?? time))
     lastTime = time
 
-    // 1. Predict every track forward by its last velocity.
+    // 1. Predict every track forward by its last velocity, plus the global image shift
+    //    (a head turn moves every box together), so IDs survive moderate head motion.
     for i in tracks.indices {
-      tracks[i].left += tracks[i].vLeft * dt
-      tracks[i].right += tracks[i].vRight * dt
+      tracks[i].left += tracks[i].vLeft * dt + frameShift
+      tracks[i].right += tracks[i].vRight * dt + frameShift
       tracks[i].top += tracks[i].vTop * dt
       tracks[i].bottom += tracks[i].vBottom * dt
     }

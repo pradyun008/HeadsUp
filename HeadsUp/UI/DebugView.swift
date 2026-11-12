@@ -6,11 +6,22 @@ struct DebugView: View {
 
   var body: some View {
     VStack(spacing: 12) {
-      FrameOverlayView(image: model.preview, tracks: model.tracks)
+      FrameOverlayView(image: model.preview, tracks: model.tracks, risk: model.risk, corridor: model.corridor)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
       VStack(alignment: .leading, spacing: 4) {
-        Text(model.status.text).font(.headline)
+        HStack {
+          Text(model.status.text).font(.headline)
+          Spacer()
+          if model.risk.unstable {
+            Text("HEAD MOVING · unstable, levels held")
+              .font(.caption.bold())
+              .padding(.horizontal, 8).padding(.vertical, 4)
+              .background(.purple, in: Capsule())
+              .foregroundStyle(.white)
+          }
+        }
+        legend
         if let message = model.detectorMessage {
           Text(message).font(.callout).foregroundStyle(.red)
         }
@@ -37,10 +48,30 @@ struct DebugView: View {
   }
 }
 
+extension DebugView {
+  fileprivate var legend: some View {
+    HStack(spacing: 10) {
+      ForEach(
+        [("not approaching", Color.gray), ("passing", .blue), ("on course", .orange), ("urgent", .red)],
+        id: \.0
+      ) { name, color in
+        HStack(spacing: 4) {
+          RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 12, height: 12)
+          Text(name).font(.caption)
+        }
+      }
+    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("Box colours: grey not approaching, blue passing, orange on course, red urgent")
+  }
+}
+
 /// A frame with detection boxes drawn over it.
 struct FrameOverlayView: View {
   let image: CGImage?
   let tracks: [Track]
+  var risk = RiskFrame()
+  var corridor = 0.15
 
   var body: some View {
     ZStack {
@@ -50,6 +81,7 @@ struct FrameOverlayView: View {
           .resizable()
           .overlay {
             Canvas { context, size in
+              drawCorridor(in: &context, size: size)
               for t in tracks { draw(t, in: &context, size: size) }
             }
           }
@@ -73,19 +105,66 @@ struct FrameOverlayView: View {
     let rect = CGRect(
       x: (d.left + 1) / 2 * size.width, y: d.top * size.height,
       width: (d.right - d.left) / 2 * size.width, height: (d.bottom - d.top) * size.height)
-    let color = Color.gray  // grey = not judged yet; risk colours arrive with the RiskEstimator
+    let assessment = risk[d.id]
+    let color = Self.color(for: assessment)
     // Dashed outline = coasting: not seen this frame, position predicted from its last motion.
     context.stroke(
       Path(rect), with: .color(color),
       style: StrokeStyle(lineWidth: 3, dash: d.isCoasting ? [6, 5] : []))
-    let label = Text("#\(d.id) \(d.objectClass.rawValue)\(d.isCoasting ? " (coasting)" : "")")
+    let label = Text(Self.label(for: d, assessment))
       .font(.caption.bold()).foregroundStyle(.white)
     let resolved = context.resolve(label)
     let textSize = resolved.measure(in: size)
-    let origin = CGPoint(x: rect.minX, y: max(0, rect.minY - textSize.height - 2))
+    // Keep the label inside the frame even when the box is at an edge.
+    let origin = CGPoint(
+      x: max(0, min(rect.minX, size.width - textSize.width - 6)),
+      y: max(0, min(rect.minY - textSize.height - 2, size.height - textSize.height - 2)))
     context.fill(
       Path(CGRect(origin: origin, size: CGSize(width: textSize.width + 6, height: textSize.height + 2))),
       with: .color(color))
     context.draw(resolved, at: CGPoint(x: origin.x + 3, y: origin.y + 1), anchor: .topLeading)
+  }
+
+  /// Dashed lines at ±corridor: the strip of the image the wearer is heading into (camera-relative).
+  private func drawCorridor(in context: inout GraphicsContext, size: CGSize) {
+    for edge in [-corridor, corridor] {
+      let x = (edge + 1) / 2 * size.width
+      var path = Path()
+      path.move(to: CGPoint(x: x, y: 0))
+      path.addLine(to: CGPoint(x: x, y: size.height))
+      context.stroke(path, with: .color(.white.opacity(0.8)), style: StrokeStyle(lineWidth: 1.5, dash: [8, 6]))
+    }
+  }
+
+  /// grey = not approaching (or too new to judge), blue = passing, yellow/orange/red = on course by level.
+  static func color(for assessment: RiskAssessment?) -> Color {
+    guard let a = assessment else { return .gray }
+    switch a.state {
+    case .tooNew, .notApproaching: return .gray
+    case .passing: return .blue
+    case .onCourse:
+      switch a.level {
+      case 3: return .red
+      case 2: return .orange
+      case 1: return Color(red: 0.85, green: 0.65, blue: 0.0)
+      default: return Color(red: 0.55, green: 0.5, blue: 0.2)
+      }
+    }
+  }
+
+  static func label(for track: Track, _ assessment: RiskAssessment?) -> String {
+    var text = "#\(track.id) \(track.objectClass.rawValue)"
+    if let a = assessment {
+      // tau is an estimate from image growth, so it is always labelled "est."
+      if let tau = a.tau { text += String(format: " · est. %.1f s", tau) }
+      switch a.state {
+      case .tooNew: text += " · new"
+      case .notApproaching: text += " · not approaching"
+      case .passing: text += " · passing"
+      case .onCourse: text += " · L\(a.level)" + (a.side.map { " \($0.rawValue)" } ?? "")
+      }
+      if a.held { text += " · held" }
+    }
+    return text
   }
 }

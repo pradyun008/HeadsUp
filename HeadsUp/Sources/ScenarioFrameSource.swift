@@ -29,11 +29,15 @@ final class ScenarioFrameSource: FrameSource {
     let started = CACurrentMediaTime()
     let timer = DispatchSource.makeTimerSource(queue: queue)
     timer.schedule(deadline: .now(), repeating: 1.0 / Self.frameRate)
+    var lastOffset = 0.0
     timer.setEventHandler {
       let now = CACurrentMediaTime()
       let detections = scenario.detections(at: now - started)
-      guard let buffer = Self.render(detections) else { return }
-      handler?(Frame(pixelBuffer: buffer, timestamp: now, scriptedDetections: detections))
+      let offset = scenario.contentOffset(at: now - started)
+      let shift = offset - lastOffset
+      lastOffset = offset
+      guard let buffer = Self.render(detections, offset: offset) else { return }
+      handler?(Frame(pixelBuffer: buffer, timestamp: now, scriptedDetections: detections, scriptedShift: shift))
     }
     self.timer = timer
     timer.resume()
@@ -46,7 +50,7 @@ final class ScenarioFrameSource: FrameSource {
     status = .idle
   }
 
-  private nonisolated static func render(_ detections: [Detection]) -> CVPixelBuffer? {
+  private nonisolated static func render(_ detections: [Detection], offset: Double) -> CVPixelBuffer? {
     let w = size.width, h = size.height
     var pb: CVPixelBuffer?
     let attrs: [CFString: Any] = [kCVPixelBufferIOSurfacePropertiesKey: [:] as CFDictionary]
@@ -65,6 +69,12 @@ final class ScenarioFrameSource: FrameSource {
     ctx.fill(CGRect(x: 0, y: h / 2, width: w, height: h / 2))
     ctx.setFillColor(CGColor(red: 0.30, green: 0.32, blue: 0.33, alpha: 1))
     ctx.fill(CGRect(x: 0, y: 0, width: w, height: h / 2))
+    // Background posts so a scripted head turn is visible as the scene sliding sideways.
+    ctx.setFillColor(CGColor(red: 0.42, green: 0.48, blue: 0.55, alpha: 1))
+    for i in -6...6 {
+      let x = (Double(i) * 0.4 + offset + 1) / 2 * Double(w)
+      ctx.fill(CGRect(x: x - 2, y: Double(h) / 2, width: 4, height: 60))
+    }
     // Draw far objects first so near ones cover them.
     for d in detections.sorted(by: { $0.area < $1.area }) {
       let x0 = (d.left + 1) / 2 * Double(w), x1 = (d.right + 1) / 2 * Double(w)

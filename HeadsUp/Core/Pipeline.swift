@@ -8,9 +8,10 @@ import VideoToolbox
 struct PipelineConfig: Sendable, Equatable {
   var minConfidence: Float = 0.4
   var tracker = TrackerConfig()
+  var risk = RiskConfig()
 }
 
-/// FrameSource → Detector → (Tracker → RiskEstimator → AlertPolicy, added in later steps).
+/// FrameSource → Detector → Tracker → RiskEstimator (→ AlertPolicy and outputs, added in later steps).
 ///
 /// Runs off the main thread. If a frame is still being processed when the next arrives,
 /// the new frame is DROPPED. Frames are never queued: a late warning is worse than a skipped frame.
@@ -22,6 +23,8 @@ final class Pipeline: @unchecked Sendable {
     let detections: [Detection]
     /// Tracked objects with stable IDs, including ones coasting through a short gap.
     let tracks: [Track]
+    /// Collision-course judgment per track, plus the head-motion "unstable" flag.
+    let risk: RiskFrame
     /// Time spent in the detector for this frame, milliseconds. 0 for scripted frames.
     let detectionMs: Double
     /// Frames per second arriving from the source.
@@ -43,6 +46,8 @@ final class Pipeline: @unchecked Sendable {
   private var _config = PipelineConfig()
   /// Touched only on `queue`.
   private var tracker = Tracker()
+  private var riskEstimator = RiskEstimator()
+  private let headMotion = HeadMotionEstimator()
   private var needsReset = false
 
   init(detector: Detector?) { self.detector = detector }
@@ -86,9 +91,17 @@ final class Pipeline: @unchecked Sendable {
         detections = (try? detector.detect(frame.pixelBuffer, minConfidence: config.minConfidence)) ?? []
         detectionMs = (CACurrentMediaTime() - start) * 1000
       }
-      if resetNow { tracker.reset() }
+      if resetNow {
+        tracker.reset()
+        riskEstimator.reset()
+        headMotion.reset()
+      }
+      // Global image shift since the last processed frame (head turn).
+      let frameShift = frame.scriptedDetections != nil ? frame.scriptedShift : headMotion.shift(for: frame.pixelBuffer)
       tracker.config = config.tracker
-      let tracks = tracker.update(detections, at: frame.timestamp)
+      let tracks = tracker.update(detections, at: frame.timestamp, frameShift: frameShift)
+      riskEstimator.config = config.risk
+      let risk = riskEstimator.update(tracks: tracks, time: frame.timestamp, frameShift: frameShift)
 
       var image: CGImage?
       VTCreateCGImageFromCVPixelBuffer(frame.pixelBuffer, options: nil, imageOut: &image)
@@ -101,7 +114,7 @@ final class Pipeline: @unchecked Sendable {
 
       onOutput?(
         Output(
-          timestamp: frame.timestamp, image: image, detections: detections, tracks: tracks, detectionMs: detectionMs,
+          timestamp: frame.timestamp, image: image, detections: detections, tracks: tracks, risk: risk, detectionMs: detectionMs,
           sourceFPS: sourceFPS, processedFPS: processedFPS, droppedFrames: droppedNow))
     }
   }
