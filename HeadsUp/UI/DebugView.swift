@@ -22,6 +22,10 @@ struct DebugView: View {
           }
         }
         legend
+        LevelBars(left: model.leftLevel, right: model.rightLevel)
+        if let cue = model.lastCue {
+          Text("Last spoken: “\(cue)”").font(.callout.bold())
+        }
         if let message = model.detectorMessage {
           Text(message).font(.callout).foregroundStyle(.red)
         }
@@ -63,6 +67,38 @@ extension DebugView {
     }
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("Box colours: grey not approaching, blue passing, orange on course, red urgent")
+  }
+}
+
+/// The two output levels as bars. They are two learned cues, not literal directions on the wrist.
+struct LevelBars: View {
+  let left: Int
+  let right: Int
+
+  var body: some View {
+    HStack(spacing: 16) {
+      bar("Left cue", left)
+      bar("Right cue", right)
+    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("Left cue level \(left) of 3. Right cue level \(right) of 3.")
+  }
+
+  private func bar(_ name: String, _ level: Int) -> some View {
+    VStack(alignment: .leading, spacing: 2) {
+      Text("\(name): \(level)").font(.caption.bold().monospacedDigit())
+      HStack(spacing: 3) {
+        ForEach(1...3, id: \.self) { i in
+          RoundedRectangle(cornerRadius: 3)
+            .fill(i <= level ? Self.color(level) : Color.gray.opacity(0.25))
+            .frame(height: 14)
+        }
+      }
+    }
+  }
+
+  static func color(_ level: Int) -> Color {
+    level >= 3 ? .red : level == 2 ? .orange : Color(red: 0.85, green: 0.65, blue: 0.0)
   }
 }
 

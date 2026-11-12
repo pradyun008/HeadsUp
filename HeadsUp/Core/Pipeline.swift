@@ -9,9 +9,10 @@ struct PipelineConfig: Sendable, Equatable {
   var minConfidence: Float = 0.4
   var tracker = TrackerConfig()
   var risk = RiskConfig()
+  var alert = AlertConfig()
 }
 
-/// FrameSource → Detector → Tracker → RiskEstimator (→ AlertPolicy and outputs, added in later steps).
+/// FrameSource → Detector → Tracker → RiskEstimator → AlertPolicy. Outputs (speech, band) act on the result.
 ///
 /// Runs off the main thread. If a frame is still being processed when the next arrives,
 /// the new frame is DROPPED. Frames are never queued: a late warning is worse than a skipped frame.
@@ -25,6 +26,8 @@ final class Pipeline: @unchecked Sendable {
     let tracks: [Track]
     /// Collision-course judgment per track, plus the head-motion "unstable" flag.
     let risk: RiskFrame
+    /// Smoothed left/right levels and any speech cues for this frame.
+    let alert: AlertState
     /// Time spent in the detector for this frame, milliseconds. 0 for scripted frames.
     let detectionMs: Double
     /// Frames per second arriving from the source.
@@ -47,6 +50,7 @@ final class Pipeline: @unchecked Sendable {
   /// Touched only on `queue`.
   private var tracker = Tracker()
   private var riskEstimator = RiskEstimator()
+  private var alertPolicy = AlertPolicy()
   private let headMotion = HeadMotionEstimator()
   private var needsReset = false
 
@@ -94,6 +98,7 @@ final class Pipeline: @unchecked Sendable {
       if resetNow {
         tracker.reset()
         riskEstimator.reset()
+        alertPolicy.reset()
         headMotion.reset()
       }
       // Global image shift since the last processed frame (head turn).
@@ -102,6 +107,8 @@ final class Pipeline: @unchecked Sendable {
       let tracks = tracker.update(detections, at: frame.timestamp, frameShift: frameShift)
       riskEstimator.config = config.risk
       let risk = riskEstimator.update(tracks: tracks, time: frame.timestamp, frameShift: frameShift)
+      alertPolicy.config = config.alert
+      let alert = alertPolicy.update(risk: risk, tracks: tracks, time: frame.timestamp)
 
       var image: CGImage?
       VTCreateCGImageFromCVPixelBuffer(frame.pixelBuffer, options: nil, imageOut: &image)
@@ -114,7 +121,7 @@ final class Pipeline: @unchecked Sendable {
 
       onOutput?(
         Output(
-          timestamp: frame.timestamp, image: image, detections: detections, tracks: tracks, risk: risk, detectionMs: detectionMs,
+          timestamp: frame.timestamp, image: image, detections: detections, tracks: tracks, risk: risk, alert: alert, detectionMs: detectionMs,
           sourceFPS: sourceFPS, processedFPS: processedFPS, droppedFrames: droppedNow))
     }
   }

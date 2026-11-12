@@ -17,6 +17,7 @@
 		47AEA3838F445BB3062CEF68 /* ScenarioFrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475BB8DAA2B4611B953BAACB /* ScenarioFrameSource.swift */; };
 		48CADD26D11B5F55EBEE3358 /* MWDATMockDevice in Frameworks */ = {isa = PBXBuildFile; productRef = 11F690C69FD33BAF81E6F8A9 /* MWDATMockDevice */; };
 		4B07B5CBF3295AC5F03C1EBF /* PhoneCameraFrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CC60AD2BE708A1DE540ACF /* PhoneCameraFrameSource.swift */; };
+		4F58367DC90640C5361AB8E6 /* AlertPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12D9728014860FB10C431F07 /* AlertPolicyTests.swift */; };
 		6855D635A2201C3462479CC2 /* DebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFAD5E9DFBC21806B4F13D1B /* DebugView.swift */; };
 		782149C638D336BACFC5A034 /* RiskEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F9F0A690D2DAD38DF15BC8 /* RiskEstimator.swift */; };
 		8937990E76E896B2919C5EE3 /* TrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D18C9A6DE5741F3F61A581 /* TrackerTests.swift */; };
@@ -26,10 +27,12 @@
 		970384742996C1CCBA9A307B /* DetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D274F58ACC6B89AB8C297C85 /* DetectorTests.swift */; };
 		9A806B8BD3E2EFE065CDA21C /* Tracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A36B781F54567A61B821601 /* Tracker.swift */; };
 		A28025E3A034F25CF02EC834 /* GlassesFrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A81BF0119B838ADBC5003BB /* GlassesFrameSource.swift */; };
+		A5C9E350911333D27CD792BC /* AlertPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECA092D8CC9E44DDC16E2737 /* AlertPolicy.swift */; };
 		AA6AD4658F7F031F6E1C124B /* FPSMeterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999ED9845F2947A8BC4F2CBD /* FPSMeterTests.swift */; };
 		B509175B28DD13F90AA15C73 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB36975701A88C4F8CC081D2 /* MainView.swift */; };
 		B7DF1C883D9382186D1C1648 /* Detector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F52DC656B69451607AB1C7DF /* Detector.swift */; };
 		C12AA3FC0FB18DC33CE1FC8B /* yolo11n.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 1C8E86A2A5D810A14EB462B7 /* yolo11n.mlpackage */; };
+		D234DFF0F358D9092D37DCCE /* SpeechOutput.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21CB7E263597F445BF1CBFA /* SpeechOutput.swift */; };
 		DFAE8C6A1A495B7694C8197E /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D703D6BE9BDD486C97F20C /* AppModel.swift */; };
 		E385EE7674C0079ABB3D89F2 /* FrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20F15D03B3D1D04D59F91969 /* FrameSource.swift */; };
 		E7B442CCFF0C18AEB6493FF8 /* HeadMotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E51C5F42A3E35C2D7BCC298A /* HeadMotionTests.swift */; };
@@ -49,6 +52,7 @@
 
 /* Begin PBXFileReference section */
 		07D18C9A6DE5741F3F61A581 /* TrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerTests.swift; sourceTree = "<group>"; };
+		12D9728014860FB10C431F07 /* AlertPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPolicyTests.swift; sourceTree = "<group>"; };
 		1C8E86A2A5D810A14EB462B7 /* yolo11n.mlpackage */ = {isa = PBXFileReference; path = yolo11n.mlpackage; sourceTree = "<group>"; };
 		20F15D03B3D1D04D59F91969 /* FrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameSource.swift; sourceTree = "<group>"; };
 		25AA5B442B811C270B369D47 /* MockGlasses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockGlasses.swift; sourceTree = "<group>"; };
@@ -62,6 +66,7 @@
 		927EEEC02AE4E6D3992A198D /* mock_feed.mp4 */ = {isa = PBXFileReference; path = mock_feed.mp4; sourceTree = "<group>"; };
 		999ED9845F2947A8BC4F2CBD /* FPSMeterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FPSMeterTests.swift; sourceTree = "<group>"; };
 		9B4F8FB47F6A8DEE6CA3C956 /* Scenario.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scenario.swift; sourceTree = "<group>"; };
+		A21CB7E263597F445BF1CBFA /* SpeechOutput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechOutput.swift; sourceTree = "<group>"; };
 		A4D703D6BE9BDD486C97F20C /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		A719907EA705A96255520CEA /* Pipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pipeline.swift; sourceTree = "<group>"; };
 		AE9E030751B218E1DC844CFF /* RiskEstimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiskEstimatorTests.swift; sourceTree = "<group>"; };
@@ -71,6 +76,7 @@
 		E2AE84CF942FDB4369E8B8B4 /* HeadsUpApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadsUpApp.swift; sourceTree = "<group>"; };
 		E51C5F42A3E35C2D7BCC298A /* HeadMotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadMotionTests.swift; sourceTree = "<group>"; };
 		EA5C482A2525D385B0B11267 /* Detection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Detection.swift; sourceTree = "<group>"; };
+		ECA092D8CC9E44DDC16E2737 /* AlertPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPolicy.swift; sourceTree = "<group>"; };
 		EFAD5E9DFBC21806B4F13D1B /* DebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugView.swift; sourceTree = "<group>"; };
 		F52DC656B69451607AB1C7DF /* Detector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Detector.swift; sourceTree = "<group>"; };
 		F6F9F0A690D2DAD38DF15BC8 /* RiskEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RiskEstimator.swift; sourceTree = "<group>"; };
@@ -124,6 +130,7 @@
 		71121FB1A9F86D58115ED55B /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				ECA092D8CC9E44DDC16E2737 /* AlertPolicy.swift */,
 				EA5C482A2525D385B0B11267 /* Detection.swift */,
 				F52DC656B69451607AB1C7DF /* Detector.swift */,
 				20F15D03B3D1D04D59F91969 /* FrameSource.swift */,
@@ -160,6 +167,7 @@
 				87432297E61BB088DB96377D /* Info.plist */,
 				B53C2BAACE3860F9317C1AA0 /* App */,
 				71121FB1A9F86D58115ED55B /* Core */,
+				C4E3A0D4F1E0BB830ADC7351 /* Outputs */,
 				8C63619A58F64669B4D2EB12 /* Resources */,
 				52FCDDF85D1D015153ED4A04 /* Sources */,
 				008A23561C15288DA572088C /* UI */,
@@ -167,9 +175,18 @@
 			path = HeadsUp;
 			sourceTree = "<group>";
 		};
+		C4E3A0D4F1E0BB830ADC7351 /* Outputs */ = {
+			isa = PBXGroup;
+			children = (
+				A21CB7E263597F445BF1CBFA /* SpeechOutput.swift */,
+			);
+			path = Outputs;
+			sourceTree = "<group>";
+		};
 		CA5FF8E59D92ACB1DEF5E887 /* HeadsUpTests */ = {
 			isa = PBXGroup;
 			children = (
+				12D9728014860FB10C431F07 /* AlertPolicyTests.swift */,
 				D274F58ACC6B89AB8C297C85 /* DetectorTests.swift */,
 				999ED9845F2947A8BC4F2CBD /* FPSMeterTests.swift */,
 				E51C5F42A3E35C2D7BCC298A /* HeadMotionTests.swift */,
@@ -308,6 +325,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F58367DC90640C5361AB8E6 /* AlertPolicyTests.swift in Sources */,
 				970384742996C1CCBA9A307B /* DetectorTests.swift in Sources */,
 				AA6AD4658F7F031F6E1C124B /* FPSMeterTests.swift in Sources */,
 				E7B442CCFF0C18AEB6493FF8 /* HeadMotionTests.swift in Sources */,
@@ -321,6 +339,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A5C9E350911333D27CD792BC /* AlertPolicy.swift in Sources */,
 				DFAE8C6A1A495B7694C8197E /* AppModel.swift in Sources */,
 				6855D635A2201C3462479CC2 /* DebugView.swift in Sources */,
 				8D3A011CDB758DB95A0E18E0 /* Detection.swift in Sources */,
@@ -336,6 +355,7 @@
 				782149C638D336BACFC5A034 /* RiskEstimator.swift in Sources */,
 				2B282898F6D8585EA81C413B /* Scenario.swift in Sources */,
 				47AEA3838F445BB3062CEF68 /* ScenarioFrameSource.swift in Sources */,
+				D234DFF0F358D9092D37DCCE /* SpeechOutput.swift in Sources */,
 				9A806B8BD3E2EFE065CDA21C /* Tracker.swift in Sources */,
 				C12AA3FC0FB18DC33CE1FC8B /* yolo11n.mlpackage in Sources */,
 			);

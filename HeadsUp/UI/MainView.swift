@@ -25,6 +25,12 @@ struct MainView: View {
           Text(String(format: "%.0f frames per second", model.fps))
             .font(.title3.monospacedDigit())
         }
+        if model.isWatching {
+          LevelBars(left: model.leftLevel, right: model.rightLevel)
+          if let cue = model.lastCue {
+            Text("Last spoken: “\(cue)”").font(.title3.bold())
+          }
+        }
         sourcePicker
 
         Button(action: { model.isWatching ? model.stop() : model.start() }) {
@@ -36,10 +42,20 @@ struct MainView: View {
         .tint(model.isWatching ? .red : .accentColor)
         .accessibilityHint(model.isWatching ? "Stops watching" : "Starts watching with \(model.sourceName)")
 
+        voiceToggle
         glassesSection
         developerSection
       }
       .padding()
+    }
+  }
+
+  private var voiceToggle: some View {
+    @Bindable var model = model
+    return VStack(alignment: .leading, spacing: 4) {
+      Toggle("Voice", isOn: $model.speechEnabled).font(.title2.bold())
+      Text("Speaks what was seen, like “bike, left”, through the glasses or phone speaker.")
+        .font(.footnote).foregroundStyle(.secondary)
     }
   }
 

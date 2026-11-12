@@ -45,6 +45,21 @@ final class AppModel {
   private(set) var detections: [Detection] = []
   private(set) var tracks: [Track] = []
   private(set) var risk = RiskFrame()
+  /// Smoothed output levels, 0–3. "Left" and "right" are camera-relative.
+  private(set) var leftLevel = 0
+  private(set) var rightLevel = 0
+  private(set) var lastCue: String?
+  /// Voice on/off.
+  var speechEnabled: Bool {
+    didSet {
+      UserDefaults.standard.set(speechEnabled, forKey: "speechEnabled")
+      if !speechEnabled { speech.stopAll() }
+    }
+  }
+  @ObservationIgnored private let speech = SpeechOutput()
+  /// True once frames have flowed since Start; decides between "Watching" and "Watching resumed".
+  @ObservationIgnored private var hasRun = false
+  @ObservationIgnored private var wasInterrupted = false
   var corridor: Double { pipeline.config.risk.corridor }
   private(set) var processedFPS = 0.0
   private(set) var detectionMs = 0.0
@@ -66,6 +81,7 @@ final class AppModel {
     let saved = UserDefaults.standard.string(forKey: "sourceKind").flatMap(SourceKind.init(rawValue:))
     self.sourceKind = saved ?? .glasses
     self.scenarioName = scenarioSource.scenario.name
+    self.speechEnabled = UserDefaults.standard.object(forKey: "speechEnabled") as? Bool ?? true
     do {
       pipeline = Pipeline(detector: try YOLODetector())
     } catch {
@@ -95,6 +111,9 @@ final class AppModel {
 
   func start() {
     isWatching = true
+    hasRun = false
+    wasInterrupted = false
+    lastCue = nil
     pipeline.reset()
     fps = 0
     frameCount = 0
@@ -114,6 +133,8 @@ final class AppModel {
     detections = []
     tracks = []
     risk = RiskFrame()
+    leftLevel = 0
+    rightLevel = 0
     fps = 0
     processedFPS = 0
     UIApplication.shared.isIdleTimerDisabled = false
@@ -121,6 +142,7 @@ final class AppModel {
 
   private func statusChanged(_ status: FrameSourceStatus) {
     self.status = status
+    announce(status)
     switch status {
     case .failed, .needsAction:
       // The source has torn itself down; Start is available again.
@@ -128,6 +150,25 @@ final class AppModel {
     default:
       break
     }
+  }
+
+  /// Spoken status for a wearer who cannot see the screen: started, lost/paused, resumed.
+  /// These only report the app's state. Hazard cues always take priority over them.
+  private func announce(_ status: FrameSourceStatus) {
+    guard speechEnabled, isWatching else { return }
+    var text: String?
+    switch status {
+    case .running:
+      text = !hasRun ? "Watching" : wasInterrupted ? "Watching resumed" : nil
+      hasRun = true
+      wasInterrupted = false
+    case .interrupted(let message), .failed(let message), .needsAction(let message):
+      wasInterrupted = true
+      text = message
+    case .idle, .starting:
+      break
+    }
+    if let text { speech.speak(SpeechCue(text: text, priority: 0, trackID: nil)) }
   }
 
   private func outputArrived(_ output: Pipeline.Output) {
@@ -140,6 +181,12 @@ final class AppModel {
     detections = output.detections
     tracks = output.tracks
     risk = output.risk
+    leftLevel = output.alert.leftLevel
+    rightLevel = output.alert.rightLevel
+    for cue in output.alert.cues {
+      lastCue = cue.text
+      if speechEnabled { speech.speak(cue) }
+    }
     if let image = output.image {
       preview = image
       frameSize = CGSize(width: image.width, height: image.height)
