@@ -25,7 +25,12 @@ struct HeadsUpApp: App {
     WindowGroup {
       Group {
         if let model {
-          MainView(model: model, callbackError: callbackError)
+          TabView {
+            MainView(model: model, callbackError: callbackError)
+              .tabItem { Label("Main", systemImage: "eye") }
+            DebugView(model: model)
+              .tabItem { Label("Debug", systemImage: "viewfinder") }
+          }
         } else {
           Text("The Meta glasses SDK failed to start. Check the app's signing and Info.plist.")
             .font(.title2).padding()

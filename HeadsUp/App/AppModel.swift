@@ -1,7 +1,6 @@
 import CoreVideo
 import Observation
 import UIKit
-import VideoToolbox
 
 /// App state: the active frame source, its status, and the latest frame for display.
 @Observable
@@ -43,9 +42,14 @@ final class AppModel {
   private(set) var frameCount = 0
   private(set) var preview: CGImage?
   private(set) var frameSize: CGSize = .zero
+  private(set) var detections: [Detection] = []
+  private(set) var processedFPS = 0.0
+  private(set) var detectionMs = 0.0
+  private(set) var droppedFrames = 0
+  /// Set when the detection model could not be loaded.
+  private(set) var detectorMessage: String?
 
-  @ObservationIgnored private var meter = FPSMeter()
-
+  @ObservationIgnored private let pipeline: Pipeline
   private var source: any FrameSource {
     switch sourceKind {
     case .glasses: return glasses
@@ -59,6 +63,15 @@ final class AppModel {
     let saved = UserDefaults.standard.string(forKey: "sourceKind").flatMap(SourceKind.init(rawValue:))
     self.sourceKind = saved ?? .glasses
     self.scenarioName = scenarioSource.scenario.name
+    do {
+      pipeline = Pipeline(detector: try YOLODetector())
+    } catch {
+      pipeline = Pipeline(detector: nil)
+      detectorMessage = error.localizedDescription
+    }
+    pipeline.onOutput = { [weak self] output in
+      Task { @MainActor in self?.outputArrived(output) }
+    }
     attach(glasses, kind: .glasses)
     attach(phoneCamera, kind: .phoneCamera)
     attach(scenarioSource, kind: .scenario)
@@ -72,17 +85,14 @@ final class AppModel {
       guard let self, self.sourceKind == kind else { return }
       self.statusChanged(status)
     }
-    source.onFrame = { [weak self] frame in
-      // Off the main thread: make the display image here, then hop.
-      var image: CGImage?
-      VTCreateCGImageFromCVPixelBuffer(frame.pixelBuffer, options: nil, imageOut: &image)
-      Task { @MainActor in self?.frameArrived(frame, image: image) }
-    }
+    // Off the main thread: straight into the pipeline, which drops frames while busy.
+    let pipeline = self.pipeline
+    source.onFrame = { frame in pipeline.process(frame) }
   }
 
   func start() {
     isWatching = true
-    meter.reset()
+    pipeline.reset()
     fps = 0
     frameCount = 0
     frameSize = .zero
@@ -98,7 +108,9 @@ final class AppModel {
   private func finishWatching() {
     isWatching = false
     preview = nil
+    detections = []
     fps = 0
+    processedFPS = 0
     UIApplication.shared.isIdleTimerDisabled = false
   }
 
@@ -113,11 +125,15 @@ final class AppModel {
     }
   }
 
-  private func frameArrived(_ frame: Frame, image: CGImage?) {
+  private func outputArrived(_ output: Pipeline.Output) {
     guard isWatching else { return }
     frameCount += 1
-    fps = meter.tick(at: frame.timestamp)
-    if let image {
+    fps = output.sourceFPS
+    processedFPS = output.processedFPS
+    detectionMs = detectionMs == 0 ? output.detectionMs : 0.9 * detectionMs + 0.1 * output.detectionMs
+    droppedFrames = output.droppedFrames
+    detections = output.detections
+    if let image = output.image {
       preview = image
       frameSize = CGSize(width: image.width, height: image.height)
     }

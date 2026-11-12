@@ -21,7 +21,10 @@ struct MainView: View {
           Text(message).font(.body).foregroundStyle(.red)
         }
 
-        preview
+        if model.isWatching {
+          Text(String(format: "%.0f frames per second", model.fps))
+            .font(.title3.monospacedDigit())
+        }
         sourcePicker
 
         Button(action: { model.isWatching ? model.stop() : model.start() }) {
@@ -38,33 +41,6 @@ struct MainView: View {
       }
       .padding()
     }
-  }
-
-  private var preview: some View {
-    ZStack(alignment: .topLeading) {
-      Rectangle().fill(.black)
-      if let image = model.preview {
-        Image(decorative: image, scale: 1).resizable().scaledToFit()
-      } else {
-        Text("No video").foregroundStyle(.gray).frame(maxWidth: .infinity, maxHeight: .infinity)
-      }
-      if model.isWatching {
-        Text(String(format: "%.0f fps  %d×%d", model.fps, Int(model.frameSize.width), Int(model.frameSize.height)))
-          .font(.callout.monospacedDigit().bold())
-          .padding(6)
-          .background(.black.opacity(0.6))
-          .foregroundStyle(.white)
-          .padding(8)
-      }
-    }
-    .aspectRatio(9.0 / 16.0, contentMode: .fit)
-    .frame(maxHeight: 420)
-    .clipShape(RoundedRectangle(cornerRadius: 12))
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel(
-      model.isWatching
-        ? "Camera view, \(Int(model.fps)) frames per second"
-        : "Camera view, no video")
   }
 
   private var sourcePicker: some View {
