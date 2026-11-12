@@ -26,6 +26,12 @@ struct DebugView: View {
         if let cue = model.lastCue {
           Text("Last spoken: “\(cue)”").font(.callout.bold())
         }
+        Text(
+          String(
+            format: "Simulated band: bytes [%d, %d] · %.1f writes/s",
+            model.bandPacket[0], model.bandPacket[1], model.bandWriteRate)
+        )
+        .font(.callout.monospacedDigit())
         if let message = model.detectorMessage {
           Text(message).font(.callout).foregroundStyle(.red)
         }

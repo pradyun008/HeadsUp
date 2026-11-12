@@ -49,6 +49,18 @@ final class AppModel {
   private(set) var leftLevel = 0
   private(set) var rightLevel = 0
   private(set) var lastCue: String?
+  /// What the (simulated) band's two motors are doing: the bytes last written to it.
+  private(set) var bandPacket: [UInt8] = [0, 0]
+  private(set) var bandWriteRate = 0.0
+  /// "Which wrist": exchanges the two cues sent to the band.
+  var swapBandChannels: Bool {
+    didSet {
+      UserDefaults.standard.set(swapBandChannels, forKey: "swapBandChannels")
+      band.swapChannels = swapBandChannels
+    }
+  }
+  @ObservationIgnored private let simulatedBand = SimulatedBand()
+  @ObservationIgnored private let band: BandOutput
   /// Voice on/off.
   var speechEnabled: Bool {
     didSet {
@@ -81,6 +93,8 @@ final class AppModel {
     let saved = UserDefaults.standard.string(forKey: "sourceKind").flatMap(SourceKind.init(rawValue:))
     self.sourceKind = saved ?? .glasses
     self.scenarioName = scenarioSource.scenario.name
+    self.swapBandChannels = UserDefaults.standard.bool(forKey: "swapBandChannels")
+    self.band = BandOutput(transport: simulatedBand)
     self.speechEnabled = UserDefaults.standard.object(forKey: "speechEnabled") as? Bool ?? true
     do {
       pipeline = Pipeline(detector: try YOLODetector())
@@ -88,8 +102,15 @@ final class AppModel {
       pipeline = Pipeline(detector: nil)
       detectorMessage = error.localizedDescription
     }
+    band.swapChannels = swapBandChannels
+    let band = self.band
     pipeline.onOutput = { [weak self] output in
+      // Straight to the band from the pipeline thread: no hop through the main thread.
+      band.setLevels(left: output.alert.leftLevel, right: output.alert.rightLevel)
       Task { @MainActor in self?.outputArrived(output) }
+    }
+    simulatedBand.onWrite = { [weak self] packet, _ in
+      Task { @MainActor in self?.bandWrote(packet) }
     }
     attach(glasses, kind: .glasses)
     attach(phoneCamera, kind: .phoneCamera)
@@ -119,6 +140,7 @@ final class AppModel {
     frameCount = 0
     frameSize = .zero
     UIApplication.shared.isIdleTimerDisabled = true
+    band.start()
     source.start()
   }
 
@@ -127,8 +149,14 @@ final class AppModel {
     finishWatching()
   }
 
+  private func bandWrote(_ packet: [UInt8]) {
+    bandPacket = packet
+    bandWriteRate = simulatedBand.writeRate
+  }
+
   private func finishWatching() {
     isWatching = false
+    band.stop()
     preview = nil
     detections = []
     tracks = []
