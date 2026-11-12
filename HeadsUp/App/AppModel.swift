@@ -7,7 +7,35 @@ import VideoToolbox
 @Observable
 @MainActor
 final class AppModel {
+  enum SourceKind: String, CaseIterable, Identifiable {
+    case glasses, phoneCamera, scenario
+    var id: String { rawValue }
+    var label: String {
+      switch self {
+      case .glasses: return "Glasses"
+      case .phoneCamera: return "Phone camera"
+      case .scenario: return "Scripted scene"
+      }
+    }
+  }
+
   let glasses: GlassesFrameSource
+  let phoneCamera = PhoneCameraFrameSource()
+  let scenarioSource = ScenarioFrameSource()
+
+  /// Which source Start uses. Can only change while stopped.
+  var sourceKind: SourceKind {
+    didSet {
+      guard sourceKind != oldValue else { return }
+      UserDefaults.standard.set(sourceKind.rawValue, forKey: "sourceKind")
+      status = .idle
+    }
+  }
+  var scenarioName: String {
+    didSet {
+      if let s = Scenario.all.first(where: { $0.name == scenarioName }) { scenarioSource.scenario = s }
+    }
+  }
 
   private(set) var status: FrameSourceStatus = .idle
   private(set) var isWatching = false
@@ -16,19 +44,34 @@ final class AppModel {
   private(set) var preview: CGImage?
   private(set) var frameSize: CGSize = .zero
 
-  @ObservationIgnored private var source: any FrameSource
   @ObservationIgnored private var meter = FPSMeter()
+
+  private var source: any FrameSource {
+    switch sourceKind {
+    case .glasses: return glasses
+    case .phoneCamera: return phoneCamera
+    case .scenario: return scenarioSource
+    }
+  }
 
   init(glasses: GlassesFrameSource) {
     self.glasses = glasses
-    self.source = glasses
-    attach(glasses)
+    let saved = UserDefaults.standard.string(forKey: "sourceKind").flatMap(SourceKind.init(rawValue:))
+    self.sourceKind = saved ?? .glasses
+    self.scenarioName = scenarioSource.scenario.name
+    attach(glasses, kind: .glasses)
+    attach(phoneCamera, kind: .phoneCamera)
+    attach(scenarioSource, kind: .scenario)
   }
 
   var sourceName: String { source.displayName }
 
-  private func attach(_ source: any FrameSource) {
-    source.onStatusChange = { [weak self] status in self?.statusChanged(status) }
+  private func attach(_ source: any FrameSource, kind: SourceKind) {
+    source.onStatusChange = { [weak self] status in
+      // Ignore sources that are not selected.
+      guard let self, self.sourceKind == kind else { return }
+      self.statusChanged(status)
+    }
     source.onFrame = { [weak self] frame in
       // Off the main thread: make the display image here, then hop.
       var image: CGImage?
@@ -42,6 +85,7 @@ final class AppModel {
     meter.reset()
     fps = 0
     frameCount = 0
+    frameSize = .zero
     UIApplication.shared.isIdleTimerDisabled = true
     source.start()
   }

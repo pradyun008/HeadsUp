@@ -22,6 +22,7 @@ struct MainView: View {
         }
 
         preview
+        sourcePicker
 
         Button(action: { model.isWatching ? model.stop() : model.start() }) {
           Text(model.isWatching ? "Stop" : "Start")
@@ -64,6 +65,31 @@ struct MainView: View {
       model.isWatching
         ? "Camera view, \(Int(model.fps)) frames per second"
         : "Camera view, no video")
+  }
+
+  private var sourcePicker: some View {
+    @Bindable var model = model
+    return VStack(alignment: .leading, spacing: 8) {
+      Text("Video source").font(.title2.bold()).accessibilityAddTraits(.isHeader)
+      Picker("Video source", selection: $model.sourceKind) {
+        ForEach(AppModel.SourceKind.allCases) { kind in
+          Text(kind.label).tag(kind)
+        }
+      }
+      .pickerStyle(.segmented)
+      .controlSize(.large)
+      if model.sourceKind == .scenario {
+        Picker("Scene", selection: $model.scenarioName) {
+          ForEach(Scenario.all, id: \.name) { Text($0.name).tag($0.name) }
+        }
+        .pickerStyle(.menu)
+        .font(.title3)
+        Text("A drawn scene with scripted objects, for testing without a camera.")
+          .font(.footnote).foregroundStyle(.secondary)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .disabled(model.isWatching)
   }
 
   private var glassesSection: some View {

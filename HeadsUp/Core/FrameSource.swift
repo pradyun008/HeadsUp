@@ -7,6 +7,8 @@ struct Frame: @unchecked Sendable {
   /// Host-clock seconds (`CACurrentMediaTime`) when the frame reached the app.
   /// Latency is measured from this point.
   let timestamp: CFTimeInterval
+  /// Set only by the scripted scene source: detections to use instead of running the detector.
+  var scriptedDetections: [Detection]? = nil
 }
 
 enum FrameSourceStatus: Equatable {

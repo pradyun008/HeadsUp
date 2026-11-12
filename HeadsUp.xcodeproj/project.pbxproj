@@ -10,8 +10,13 @@
 		0DF76284A0D40EBA28097EC7 /* mock_feed.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 927EEEC02AE4E6D3992A198D /* mock_feed.mp4 */; };
 		1AF2E0E522162ABFEB52DCE3 /* MockGlasses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25AA5B442B811C270B369D47 /* MockGlasses.swift */; };
 		1E82C0F89E0C67FACB99937F /* HeadsUpApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2AE84CF942FDB4369E8B8B4 /* HeadsUpApp.swift */; };
+		2B282898F6D8585EA81C413B /* Scenario.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B4F8FB47F6A8DEE6CA3C956 /* Scenario.swift */; };
 		388F02700A1A61A17D450DF8 /* MWDATCamera in Frameworks */ = {isa = PBXBuildFile; productRef = C75AF68F784AF3FA4B965E1B /* MWDATCamera */; };
+		47AEA3838F445BB3062CEF68 /* ScenarioFrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475BB8DAA2B4611B953BAACB /* ScenarioFrameSource.swift */; };
 		48CADD26D11B5F55EBEE3358 /* MWDATMockDevice in Frameworks */ = {isa = PBXBuildFile; productRef = 11F690C69FD33BAF81E6F8A9 /* MWDATMockDevice */; };
+		4B07B5CBF3295AC5F03C1EBF /* PhoneCameraFrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60CC60AD2BE708A1DE540ACF /* PhoneCameraFrameSource.swift */; };
+		8D3A011CDB758DB95A0E18E0 /* Detection.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA5C482A2525D385B0B11267 /* Detection.swift */; };
+		963EBFB1DBE4102781D25621 /* ScenarioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E638EDAE9868F1D0D61572D /* ScenarioTests.swift */; };
 		A28025E3A034F25CF02EC834 /* GlassesFrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A81BF0119B838ADBC5003BB /* GlassesFrameSource.swift */; };
 		AA6AD4658F7F031F6E1C124B /* FPSMeterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999ED9845F2947A8BC4F2CBD /* FPSMeterTests.swift */; };
 		B509175B28DD13F90AA15C73 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB36975701A88C4F8CC081D2 /* MainView.swift */; };
@@ -33,14 +38,19 @@
 /* Begin PBXFileReference section */
 		20F15D03B3D1D04D59F91969 /* FrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameSource.swift; sourceTree = "<group>"; };
 		25AA5B442B811C270B369D47 /* MockGlasses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockGlasses.swift; sourceTree = "<group>"; };
+		3E638EDAE9868F1D0D61572D /* ScenarioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenarioTests.swift; sourceTree = "<group>"; };
+		475BB8DAA2B4611B953BAACB /* ScenarioFrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenarioFrameSource.swift; sourceTree = "<group>"; };
+		60CC60AD2BE708A1DE540ACF /* PhoneCameraFrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneCameraFrameSource.swift; sourceTree = "<group>"; };
 		6A81BF0119B838ADBC5003BB /* GlassesFrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassesFrameSource.swift; sourceTree = "<group>"; };
 		834CB2021DA1D102DD0F0C25 /* HeadsUp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = HeadsUp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		87432297E61BB088DB96377D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		927EEEC02AE4E6D3992A198D /* mock_feed.mp4 */ = {isa = PBXFileReference; path = mock_feed.mp4; sourceTree = "<group>"; };
 		999ED9845F2947A8BC4F2CBD /* FPSMeterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FPSMeterTests.swift; sourceTree = "<group>"; };
+		9B4F8FB47F6A8DEE6CA3C956 /* Scenario.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scenario.swift; sourceTree = "<group>"; };
 		A4D703D6BE9BDD486C97F20C /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		CB36975701A88C4F8CC081D2 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		E2AE84CF942FDB4369E8B8B4 /* HeadsUpApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadsUpApp.swift; sourceTree = "<group>"; };
+		EA5C482A2525D385B0B11267 /* Detection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Detection.swift; sourceTree = "<group>"; };
 		FA489F41A2E98F7DF87E857F /* HeadsUpTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HeadsUpTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -80,6 +90,8 @@
 			children = (
 				6A81BF0119B838ADBC5003BB /* GlassesFrameSource.swift */,
 				25AA5B442B811C270B369D47 /* MockGlasses.swift */,
+				60CC60AD2BE708A1DE540ACF /* PhoneCameraFrameSource.swift */,
+				475BB8DAA2B4611B953BAACB /* ScenarioFrameSource.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -87,7 +99,9 @@
 		71121FB1A9F86D58115ED55B /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				EA5C482A2525D385B0B11267 /* Detection.swift */,
 				20F15D03B3D1D04D59F91969 /* FrameSource.swift */,
+				9B4F8FB47F6A8DEE6CA3C956 /* Scenario.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -126,6 +140,7 @@
 			isa = PBXGroup;
 			children = (
 				999ED9845F2947A8BC4F2CBD /* FPSMeterTests.swift */,
+				3E638EDAE9868F1D0D61572D /* ScenarioTests.swift */,
 			);
 			path = HeadsUpTests;
 			sourceTree = "<group>";
@@ -241,6 +256,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA6AD4658F7F031F6E1C124B /* FPSMeterTests.swift in Sources */,
+				963EBFB1DBE4102781D25621 /* ScenarioTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -249,11 +265,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				DFAE8C6A1A495B7694C8197E /* AppModel.swift in Sources */,
+				8D3A011CDB758DB95A0E18E0 /* Detection.swift in Sources */,
 				E385EE7674C0079ABB3D89F2 /* FrameSource.swift in Sources */,
 				A28025E3A034F25CF02EC834 /* GlassesFrameSource.swift in Sources */,
 				1E82C0F89E0C67FACB99937F /* HeadsUpApp.swift in Sources */,
 				B509175B28DD13F90AA15C73 /* MainView.swift in Sources */,
 				1AF2E0E522162ABFEB52DCE3 /* MockGlasses.swift in Sources */,
+				4B07B5CBF3295AC5F03C1EBF /* PhoneCameraFrameSource.swift in Sources */,
+				2B282898F6D8585EA81C413B /* Scenario.swift in Sources */,
+				47AEA3838F445BB3062CEF68 /* ScenarioFrameSource.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
