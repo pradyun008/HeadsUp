@@ -102,3 +102,36 @@ final class TrackerTests: XCTestCase {
     XCTAssertEqual(ids, [1, 2])
   }
 }
+
+final class ConfigTests: XCTestCase {
+  func testConfigSurvivesSavingAndLoading() throws {
+    var config = PipelineConfig()
+    config.risk.corridor = 0.22
+    config.alert.upFrames = 4
+    let loaded = try JSONDecoder().decode(PipelineConfig.self, from: JSONEncoder().encode(config))
+    XCTAssertEqual(loaded, config)
+  }
+
+  func testTimeThresholdsAreKeptInOrder() {
+    var config = PipelineConfig()
+    config.risk.tauUrgent = 2.0
+    config.risk.tauHigh = 1.5
+    config.risk.tauLow = 1.0
+    let fixed = config.normalized()
+    XCTAssertLessThan(fixed.risk.tauUrgent, fixed.risk.tauHigh)
+    XCTAssertLessThan(fixed.risk.tauHigh, fixed.risk.tauLow)
+    XCTAssertEqual(PipelineConfig().normalized(), PipelineConfig())
+  }
+
+  func testCoastingBoxKeepsItsSize() {
+    var tracker = Tracker()
+    for i in 0..<10 {
+      let half = 0.05 + Double(i) * 0.02  // growing fast
+      tracker.update([Detection(objectClass: .person, confidence: 0.9, left: -half, right: half, top: 0.5 - half, bottom: 0.5 + half)], at: Double(i) / 15)
+    }
+    tracker.update([], at: 10.0 / 15)
+    let width = tracker.tracks[0].right - tracker.tracks[0].left
+    for i in 11..<20 { tracker.update([], at: Double(i) / 15) }
+    XCTAssertEqual(tracker.tracks[0].right - tracker.tracks[0].left, width, accuracy: 1e-9)
+  }
+}

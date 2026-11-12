@@ -1,5 +1,6 @@
 import CoreVideo
 import Observation
+import QuartzCore
 import UIKit
 
 /// App state: the active frame source, its status, and the latest frame for display.
@@ -72,7 +73,19 @@ final class AppModel {
   /// True once frames have flowed since Start; decides between "Watching" and "Watching resumed".
   @ObservationIgnored private var hasRun = false
   @ObservationIgnored private var wasInterrupted = false
-  var corridor: Double { pipeline.config.risk.corridor }
+  var corridor: Double { config.risk.corridor }
+  /// All thresholds. Applied to the pipeline at once and saved.
+  var config: PipelineConfig {
+    didSet {
+      let fixed = config.normalized()
+      if fixed != config { config = fixed; return }
+      pipeline.config = config
+      if let data = try? JSONEncoder().encode(config) { UserDefaults.standard.set(data, forKey: "pipelineConfig") }
+    }
+  }
+  /// Rolling average, milliseconds, from a frame reaching the app to the band write for it.
+  private(set) var endToEndMs = 0.0
+  @ObservationIgnored private var latencies: [Double] = []
   private(set) var processedFPS = 0.0
   private(set) var detectionMs = 0.0
   private(set) var droppedFrames = 0
@@ -96,18 +109,24 @@ final class AppModel {
     self.swapBandChannels = UserDefaults.standard.bool(forKey: "swapBandChannels")
     self.band = BandOutput(transport: simulatedBand)
     self.speechEnabled = UserDefaults.standard.object(forKey: "speechEnabled") as? Bool ?? true
+    let savedConfig = UserDefaults.standard.data(forKey: "pipelineConfig")
+      .flatMap { try? JSONDecoder().decode(PipelineConfig.self, from: $0) }
+    self.config = (savedConfig ?? PipelineConfig()).normalized()
     do {
       pipeline = Pipeline(detector: try YOLODetector())
     } catch {
       pipeline = Pipeline(detector: nil)
       detectorMessage = error.localizedDescription
     }
+    pipeline.config = config
     band.swapChannels = swapBandChannels
     let band = self.band
     pipeline.onOutput = { [weak self] output in
       // Straight to the band from the pipeline thread: no hop through the main thread.
       band.setLevels(left: output.alert.leftLevel, right: output.alert.rightLevel)
-      Task { @MainActor in self?.outputArrived(output) }
+      // End-to-end: frame reached the app → its levels were handed to the band.
+      let latencyMs = (CACurrentMediaTime() - output.timestamp) * 1000
+      Task { @MainActor in self?.outputArrived(output, latencyMs: latencyMs) }
     }
     simulatedBand.onWrite = { [weak self] packet, _ in
       Task { @MainActor in self?.bandWrote(packet) }
@@ -135,6 +154,9 @@ final class AppModel {
     hasRun = false
     wasInterrupted = false
     lastCue = nil
+    latencies = []
+    endToEndMs = 0
+    detectionMs = 0
     pipeline.reset()
     fps = 0
     frameCount = 0
@@ -199,8 +221,11 @@ final class AppModel {
     if let text { speech.speak(SpeechCue(text: text, priority: 0, trackID: nil)) }
   }
 
-  private func outputArrived(_ output: Pipeline.Output) {
+  private func outputArrived(_ output: Pipeline.Output, latencyMs: Double) {
     guard isWatching else { return }
+    latencies.append(latencyMs)
+    if latencies.count > 30 { latencies.removeFirst() }
+    endToEndMs = latencies.reduce(0, +) / Double(latencies.count)
     frameCount += 1
     fps = output.sourceFPS
     processedFPS = output.processedFPS

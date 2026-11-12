@@ -5,11 +5,19 @@ import QuartzCore
 import VideoToolbox
 
 /// Thresholds for the whole pipeline. All configurable from Settings.
-struct PipelineConfig: Sendable, Equatable {
+struct PipelineConfig: Sendable, Equatable, Codable {
   var minConfidence: Float = 0.4
   var tracker = TrackerConfig()
   var risk = RiskConfig()
   var alert = AlertConfig()
+
+  /// Keeps the three time thresholds in order: urgent < high < low.
+  func normalized() -> PipelineConfig {
+    var c = self
+    c.risk.tauHigh = max(c.risk.tauHigh, c.risk.tauUrgent + 0.1)
+    c.risk.tauLow = max(c.risk.tauLow, c.risk.tauHigh + 0.1)
+    return c
+  }
 }
 
 /// FrameSource → Detector → Tracker → RiskEstimator → AlertPolicy. Outputs (speech, band) act on the result.

@@ -40,6 +40,7 @@
 		E385EE7674C0079ABB3D89F2 /* FrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20F15D03B3D1D04D59F91969 /* FrameSource.swift */; };
 		E7B442CCFF0C18AEB6493FF8 /* HeadMotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E51C5F42A3E35C2D7BCC298A /* HeadMotionTests.swift */; };
 		E8278660650B9D30A65AE75A /* MWDATCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6AAAF32E3D8D09B7B90C09A7 /* MWDATCore */; };
+		EC0CE583E400BEDAFF485B5E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BCFC636048FE030AE9F5144 /* SettingsView.swift */; };
 		F2CDD64E89CCF5EF0DBDDF29 /* Pipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A719907EA705A96255520CEA /* Pipeline.swift */; };
 /* End PBXBuildFile section */
 
@@ -56,6 +57,7 @@
 /* Begin PBXFileReference section */
 		07D18C9A6DE5741F3F61A581 /* TrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerTests.swift; sourceTree = "<group>"; };
 		12D9728014860FB10C431F07 /* AlertPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPolicyTests.swift; sourceTree = "<group>"; };
+		1BCFC636048FE030AE9F5144 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		1C8E86A2A5D810A14EB462B7 /* yolo11n.mlpackage */ = {isa = PBXFileReference; path = yolo11n.mlpackage; sourceTree = "<group>"; };
 		20F15D03B3D1D04D59F91969 /* FrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameSource.swift; sourceTree = "<group>"; };
 		25AA5B442B811C270B369D47 /* MockGlasses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockGlasses.swift; sourceTree = "<group>"; };
@@ -109,6 +111,7 @@
 			children = (
 				EFAD5E9DFBC21806B4F13D1B /* DebugView.swift */,
 				CB36975701A88C4F8CC081D2 /* MainView.swift */,
+				1BCFC636048FE030AE9F5144 /* SettingsView.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -367,6 +370,7 @@
 				782149C638D336BACFC5A034 /* RiskEstimator.swift in Sources */,
 				2B282898F6D8585EA81C413B /* Scenario.swift in Sources */,
 				47AEA3838F445BB3062CEF68 /* ScenarioFrameSource.swift in Sources */,
+				EC0CE583E400BEDAFF485B5E /* SettingsView.swift in Sources */,
 				D234DFF0F358D9092D37DCCE /* SpeechOutput.swift in Sources */,
 				9A806B8BD3E2EFE065CDA21C /* Tracker.swift in Sources */,
 				C12AA3FC0FB18DC33CE1FC8B /* yolo11n.mlpackage in Sources */,

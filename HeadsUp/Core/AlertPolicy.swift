@@ -1,6 +1,6 @@
 import Foundation
 
-struct AlertConfig: Sendable, Equatable {
+struct AlertConfig: Sendable, Equatable, Codable {
   /// A higher level must hold this many consecutive frames before the output rises.
   var upFrames = 3
   /// A lower level must hold this many consecutive frames before the output falls.

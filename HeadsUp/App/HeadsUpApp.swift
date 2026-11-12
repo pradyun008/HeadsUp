@@ -30,6 +30,8 @@ struct HeadsUpApp: App {
               .tabItem { Label("Main", systemImage: "eye") }
             DebugView(model: model)
               .tabItem { Label("Debug", systemImage: "viewfinder") }
+            SettingsView(model: model)
+              .tabItem { Label("Settings", systemImage: "slider.horizontal.3") }
           }
         } else {
           Text("The Meta glasses SDK failed to start. Check the app's signing and Info.plist.")

@@ -28,23 +28,29 @@ struct DebugView: View {
         }
         Text(
           String(
-            format: "Simulated band: bytes [%d, %d] · %.1f writes/s",
+            format: "Simulated band: bytes [%d, %d] · %.0f writes/s",
             model.bandPacket[0], model.bandPacket[1], model.bandWriteRate)
         )
         .font(.callout.monospacedDigit())
         if let message = model.detectorMessage {
           Text(message).font(.callout).foregroundStyle(.red)
         }
+        // Latency: from the frame reaching the app to the band write for it, rolling average.
+        Text(String(format: "End-to-end %.0f ms · detection %.0f ms", model.endToEndMs, model.detectionMs))
+          .font(.callout.bold().monospacedDigit())
+          .accessibilityLabel(
+            String(format: "End to end latency %.0f milliseconds. Detection %.0f milliseconds.", model.endToEndMs, model.detectionMs))
         Text(
           String(
-            format: "source %.0f fps · processed %.0f fps · detect %.0f ms · dropped %d",
-            model.fps, model.processedFPS, model.detectionMs, model.droppedFrames)
+            format: "source %.0f fps · processed %.0f fps · dropped %d · %d tracked · %d×%d",
+            model.fps, model.processedFPS, model.droppedFrames, model.tracks.count,
+            Int(model.frameSize.width), Int(model.frameSize.height))
         )
-        .font(.callout.monospacedDigit())
-        Text("\(model.tracks.count) tracked · \(model.detections.count) detected · \(Int(model.frameSize.width))×\(Int(model.frameSize.height))")
-          .font(.callout.monospacedDigit())
+        .font(.caption.monospacedDigit())
+        Text("Latency is measured from when a frame reaches the phone; the glasses' own Bluetooth delay is not included.")
+          .font(.caption2).foregroundStyle(.secondary)
         Text("Left and right are camera-relative: the camera turns with the head.")
-          .font(.footnote).foregroundStyle(.secondary)
+          .font(.caption2).foregroundStyle(.secondary)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
 

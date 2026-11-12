@@ -42,33 +42,10 @@ struct MainView: View {
         .tint(model.isWatching ? .red : .accentColor)
         .accessibilityHint(model.isWatching ? "Stops watching" : "Starts watching with \(model.sourceName)")
 
-        voiceToggle
-        bandSection
         glassesSection
         developerSection
       }
       .padding()
-    }
-  }
-
-  private var bandSection: some View {
-    @Bindable var model = model
-    return VStack(alignment: .leading, spacing: 4) {
-      Text("Band").font(.title2.bold()).accessibilityAddTraits(.isHeader)
-      Text("Simulated. This build does not connect to a real band.").font(.title3)
-      Toggle("Band is on the other wrist", isOn: $model.swapBandChannels).font(.title3)
-      Text("Swaps the two cues. The motors are a left cue and a right cue to learn, not directions on your arm.")
-        .font(.footnote).foregroundStyle(.secondary)
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-
-  private var voiceToggle: some View {
-    @Bindable var model = model
-    return VStack(alignment: .leading, spacing: 4) {
-      Toggle("Voice", isOn: $model.speechEnabled).font(.title2.bold())
-      Text("Speaks what was seen, like “bike, left”, through the glasses or phone speaker.")
-        .font(.footnote).foregroundStyle(.secondary)
     }
   }
 

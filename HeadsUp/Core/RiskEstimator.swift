@@ -43,7 +43,7 @@ struct RiskFrame: Equatable, Sendable {
   subscript(trackID: Int) -> RiskAssessment? { assessments.first { $0.trackID == trackID } }
 }
 
-struct RiskConfig: Sendable, Equatable {
+struct RiskConfig: Sendable, Equatable, Codable {
   /// Sightings must span at least this long before a track is judged.
   var minHistory = 0.4
   /// Half-width of the wearer's corridor in normalized x units.

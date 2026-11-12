@@ -47,7 +47,7 @@ struct Track: Equatable, Sendable, Identifiable {
   }
 }
 
-struct TrackerConfig: Sendable, Equatable {
+struct TrackerConfig: Sendable, Equatable, Codable {
   /// Minimum overlap (IoU) between a detection and a track's predicted box to count as the same object.
   var minIoU = 0.2
   /// How long a track survives with no detections, coasting on its last velocity.
@@ -83,10 +83,22 @@ struct Tracker: Sendable {
     // 1. Predict every track forward by its last velocity, plus the global image shift
     //    (a head turn moves every box together), so IDs survive moderate head motion.
     for i in tracks.indices {
-      tracks[i].left += tracks[i].vLeft * dt + frameShift
-      tracks[i].right += tracks[i].vRight * dt + frameShift
-      tracks[i].top += tracks[i].vTop * dt
-      tracks[i].bottom += tracks[i].vBottom * dt
+      var t = tracks[i]
+      if t.isCoasting {
+        // Already unseen: keep the box's size and only carry its position forward, so a
+        // lost object does not balloon across the frame.
+        let vx = (t.vLeft + t.vRight) / 2, vy = (t.vTop + t.vBottom) / 2
+        t.left += vx * dt + frameShift
+        t.right += vx * dt + frameShift
+        t.top += vy * dt
+        t.bottom += vy * dt
+      } else {
+        t.left += t.vLeft * dt + frameShift
+        t.right += t.vRight * dt + frameShift
+        t.top += t.vTop * dt
+        t.bottom += t.vBottom * dt
+      }
+      tracks[i] = t
     }
 
     // 2. Greedy matching: best overlaps first.
