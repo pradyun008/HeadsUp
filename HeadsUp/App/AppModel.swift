@@ -71,6 +71,29 @@ final class AppModel {
       band.swapChannels = swapBandChannels
     }
   }
+  /// Where the left/right cues are felt.
+  enum HapticsOutput: String, CaseIterable, Identifiable {
+    case band, phone, both
+    var id: String { rawValue }
+    var label: String {
+      switch self {
+      case .band: return "Band"
+      case .phone: return "Phone"
+      case .both: return "Both"
+      }
+    }
+  }
+  var hapticsOutput: HapticsOutput {
+    didSet {
+      UserDefaults.standard.set(hapticsOutput.rawValue, forKey: "hapticsOutput")
+      outputSwitch.set(band: hapticsOutput != .phone, phone: hapticsOutput != .band)
+      if hapticsOutput == .band { phoneHaptics.stop() }
+      if hapticsOutput == .phone { band.setLevels(left: 0, right: 0) }
+    }
+  }
+  let phoneHapticsSupported = PhoneHapticOutput.isSupported
+  @ObservationIgnored private let phoneHaptics = PhoneHapticOutput()
+  @ObservationIgnored private let outputSwitch = OutputSwitch()
   @ObservationIgnored private let simulatedBand = SimulatedBand()
   @ObservationIgnored private let band: BandOutput
   /// Voice on/off.
@@ -120,6 +143,10 @@ final class AppModel {
     self.scenarioName = scenarioSource.scenario.name
     self.swapBandChannels = UserDefaults.standard.bool(forKey: "swapBandChannels")
     self.band = BandOutput(transport: simulatedBand)
+    let savedOutput = UserDefaults.standard.string(forKey: "hapticsOutput").flatMap(HapticsOutput.init(rawValue:))
+    let output = savedOutput ?? .band
+    self.hapticsOutput = output
+    outputSwitch.set(band: output != .phone, phone: output != .band)
     self.speechEnabled = UserDefaults.standard.object(forKey: "speechEnabled") as? Bool ?? true
     let savedConfig = UserDefaults.standard.data(forKey: "pipelineConfig")
       .flatMap { try? JSONDecoder().decode(PipelineConfig.self, from: $0) }
@@ -133,9 +160,13 @@ final class AppModel {
     pipeline.config = config
     band.swapChannels = swapBandChannels
     let band = self.band
+    let phoneHaptics = self.phoneHaptics
+    let outputSwitch = self.outputSwitch
     pipeline.onOutput = { [weak self] output in
       // Straight to the band from the pipeline thread: no hop through the main thread.
-      band.setLevels(left: output.alert.leftLevel, right: output.alert.rightLevel)
+      let enabled = outputSwitch.get()
+      if enabled.band { band.setLevels(left: output.alert.leftLevel, right: output.alert.rightLevel) }
+      if enabled.phone { phoneHaptics.setLevels(left: output.alert.leftLevel, right: output.alert.rightLevel) }
       // End-to-end: frame reached the app → its levels were handed to the band.
       let latencyMs = (CACurrentMediaTime() - output.timestamp) * 1000
       Task { @MainActor in self?.outputArrived(output, latencyMs: latencyMs) }
@@ -228,6 +259,7 @@ final class AppModel {
     if isRecording { toggleRecording() }
     isWatching = false
     band.stop()
+    phoneHaptics.stop()
     preview = nil
     detections = []
     tracks = []
@@ -304,4 +336,13 @@ final class RecorderBox: @unchecked Sendable {
     get { lock.withLock { _recorder } }
     set { lock.withLock { _recorder = newValue } }
   }
+}
+
+/// Which haptic outputs are on, readable from the pipeline thread.
+final class OutputSwitch: @unchecked Sendable {
+  private let lock = NSLock()
+  private var band = true
+  private var phone = false
+  func set(band: Bool, phone: Bool) { lock.withLock { self.band = band; self.phone = phone } }
+  func get() -> (band: Bool, phone: Bool) { lock.withLock { (band, phone) } }
 }

@@ -12,9 +12,17 @@ struct SettingsView: View {
           Toggle("Band is on the other wrist", isOn: $model.swapBandChannels)
           Text("Swaps the left cue and the right cue. The two motors are cues to learn, not directions on your arm.")
             .font(.footnote).foregroundStyle(.secondary)
-          LabeledContent("Haptics output", value: "Band (simulated)")
-          Text("This build has no Bluetooth band and no phone vibration yet.")
+          Picker("Haptics output", selection: $model.hapticsOutput) {
+            ForEach(AppModel.HapticsOutput.allCases) { Text($0.label).tag($0) }
+          }
+          .pickerStyle(.segmented)
+          .accessibilityLabel("Haptics output")
+          Text("Band is simulated on screen in this build (no Bluetooth yet). Phone vibration: one pulse is the left cue, two pulses the right cue, a long buzz is ahead. It repeats faster as the level rises.")
             .font(.footnote).foregroundStyle(.secondary)
+          if !model.phoneHapticsSupported {
+            Text("This device has no vibration motor, so Phone does nothing here.")
+              .font(.footnote).foregroundStyle(.orange)
+          }
         }
 
         Section("Detection") {
