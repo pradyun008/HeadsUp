@@ -55,6 +55,9 @@ targets:
         NSBluetoothAlwaysUsageDescription: Needed to connect to your Meta glasses.
         NSLocalNetworkUsageDescription: Lets your phone find and connect to your glasses over Wi-Fi.
         NSBonjourServices: [_bonjour._tcp]
+        # Lets clips be copied in and recordings copied out through Finder / the Files app.
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
         NSCameraUsageDescription: The phone camera can stand in for the glasses camera.
     dependencies:
       - package: MetaWearablesDAT

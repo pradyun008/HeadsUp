@@ -56,10 +56,7 @@ final class Pipeline: @unchecked Sendable {
   private var dropped = 0
   private var _config = PipelineConfig()
   /// Touched only on `queue`.
-  private var tracker = Tracker()
-  private var riskEstimator = RiskEstimator()
-  private var alertPolicy = AlertPolicy()
-  private let headMotion = HeadMotionEstimator()
+  private var stages = PipelineStages()
   private var needsReset = false
 
   init(detector: Detector?) { self.detector = detector }
@@ -103,20 +100,12 @@ final class Pipeline: @unchecked Sendable {
         detections = (try? detector.detect(frame.pixelBuffer, minConfidence: config.minConfidence)) ?? []
         detectionMs = (CACurrentMediaTime() - start) * 1000
       }
-      if resetNow {
-        tracker.reset()
-        riskEstimator.reset()
-        alertPolicy.reset()
-        headMotion.reset()
-      }
-      // Global image shift since the last processed frame (head turn).
-      let frameShift = frame.scriptedDetections != nil ? frame.scriptedShift : headMotion.shift(for: frame.pixelBuffer)
-      tracker.config = config.tracker
-      let tracks = tracker.update(detections, at: frame.timestamp, frameShift: frameShift)
-      riskEstimator.config = config.risk
-      let risk = riskEstimator.update(tracks: tracks, time: frame.timestamp, frameShift: frameShift)
-      alertPolicy.config = config.alert
-      let alert = alertPolicy.update(risk: risk, tracks: tracks, time: frame.timestamp)
+      if resetNow { stages.reset() }
+      let result = stages.run(
+        detections: detections, pixelBuffer: frame.pixelBuffer,
+        scriptedShift: frame.scriptedDetections != nil ? frame.scriptedShift : nil,
+        time: frame.timestamp, config: config)
+      let tracks = result.tracks, risk = result.risk, alert = result.alert
 
       var image: CGImage?
       VTCreateCGImageFromCVPixelBuffer(frame.pixelBuffer, options: nil, imageOut: &image)

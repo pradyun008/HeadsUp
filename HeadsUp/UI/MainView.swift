@@ -60,6 +60,18 @@ struct MainView: View {
       }
       .pickerStyle(.segmented)
       .controlSize(.large)
+      if model.sourceKind == .videoFile {
+        if model.videoFiles.isEmpty {
+          Text("No video files yet. Record one on the Debug tab, or copy a .mov into HeadsUp with Finder or the Files app.")
+            .font(.body)
+        } else {
+          Picker("File", selection: $model.videoFileName) {
+            ForEach(model.videoFiles, id: \.lastPathComponent) { Text($0.lastPathComponent).tag($0.lastPathComponent) }
+          }
+          .pickerStyle(.menu)
+          .font(.title3)
+        }
+      }
       if model.sourceKind == .scenario {
         Picker("Scene", selection: $model.scenarioName) {
           ForEach(Scenario.all, id: \.name) { Text($0.name).tag($0.name) }
@@ -72,6 +84,7 @@ struct MainView: View {
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .disabled(model.isWatching)
+    .onAppear { model.refreshVideoFiles() }
   }
 
   private var glassesSection: some View {

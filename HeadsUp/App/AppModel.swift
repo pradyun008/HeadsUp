@@ -8,13 +8,14 @@ import UIKit
 @MainActor
 final class AppModel {
   enum SourceKind: String, CaseIterable, Identifiable {
-    case glasses, phoneCamera, scenario
+    case glasses, phoneCamera, scenario, videoFile
     var id: String { rawValue }
     var label: String {
       switch self {
       case .glasses: return "Glasses"
-      case .phoneCamera: return "Phone camera"
-      case .scenario: return "Scripted scene"
+      case .phoneCamera: return "Phone"
+      case .scenario: return "Scripted"
+      case .videoFile: return "Video"
       }
     }
   }
@@ -22,6 +23,16 @@ final class AppModel {
   let glasses: GlassesFrameSource
   let phoneCamera = PhoneCameraFrameSource()
   let scenarioSource = ScenarioFrameSource()
+  let videoSource = VideoFileFrameSource()
+
+  /// Video files in the app's Documents folder (recordings, and clips copied in with Finder or Files).
+  private(set) var videoFiles: [URL] = []
+  var videoFileName: String = "" {
+    didSet { videoSource.url = videoFiles.first { $0.lastPathComponent == videoFileName } }
+  }
+  private(set) var isRecording = false
+  private(set) var recordingMessage: String?
+  @ObservationIgnored private let recorderBox = RecorderBox()
 
   /// Which source Start uses. Can only change while stopped.
   var sourceKind: SourceKind {
@@ -98,6 +109,7 @@ final class AppModel {
     case .glasses: return glasses
     case .phoneCamera: return phoneCamera
     case .scenario: return scenarioSource
+    case .videoFile: return videoSource
     }
   }
 
@@ -134,6 +146,8 @@ final class AppModel {
     attach(glasses, kind: .glasses)
     attach(phoneCamera, kind: .phoneCamera)
     attach(scenarioSource, kind: .scenario)
+    attach(videoSource, kind: .videoFile)
+    refreshVideoFiles()
   }
 
   var sourceName: String { source.displayName }
@@ -146,7 +160,11 @@ final class AppModel {
     }
     // Off the main thread: straight into the pipeline, which drops frames while busy.
     let pipeline = self.pipeline
-    source.onFrame = { frame in pipeline.process(frame) }
+    let recorderBox = self.recorderBox
+    source.onFrame = { frame in
+      recorderBox.recorder?.append(frame.pixelBuffer, at: frame.timestamp)  // every incoming frame
+      pipeline.process(frame)
+    }
   }
 
   func start() {
@@ -176,7 +194,38 @@ final class AppModel {
     bandWriteRate = simulatedBand.writeRate
   }
 
+  func refreshVideoFiles() {
+    let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let all = (try? FileManager.default.contentsOfDirectory(at: documents, includingPropertiesForKeys: nil)) ?? []
+    videoFiles = all.filter { ["mov", "mp4", "m4v"].contains($0.pathExtension.lowercased()) }
+      .sorted { $0.lastPathComponent > $1.lastPathComponent }
+    if !videoFiles.contains(where: { $0.lastPathComponent == videoFileName }) {
+      videoFileName = videoFiles.first?.lastPathComponent ?? ""
+    } else {
+      videoSource.url = videoFiles.first { $0.lastPathComponent == videoFileName }
+    }
+  }
+
+  /// Starts or stops saving incoming frames to a .mov in Documents.
+  func toggleRecording() {
+    if let recorder = recorderBox.recorder {
+      recorderBox.recorder = nil
+      isRecording = false
+      Task {
+        let url = await recorder.finish()
+        recordingMessage = url.map { "Saved \($0.lastPathComponent) (\(recorder.frameCount) frames)" } ?? "Recording failed: no frames saved"
+        refreshVideoFiles()
+      }
+    } else {
+      let recorder = FrameRecorder(url: FrameRecorder.newDocumentsURL())
+      recorderBox.recorder = recorder
+      isRecording = true
+      recordingMessage = "Recording to \(recorder.url.lastPathComponent)"
+    }
+  }
+
   private func finishWatching() {
+    if isRecording { toggleRecording() }
     isWatching = false
     band.stop()
     preview = nil
@@ -244,5 +293,15 @@ final class AppModel {
       preview = image
       frameSize = CGSize(width: image.width, height: image.height)
     }
+  }
+}
+
+/// Holds the active recorder where the frame thread can reach it.
+final class RecorderBox: @unchecked Sendable {
+  private let lock = NSLock()
+  private var _recorder: FrameRecorder?
+  var recorder: FrameRecorder? {
+    get { lock.withLock { _recorder } }
+    set { lock.withLock { _recorder = newValue } }
   }
 }

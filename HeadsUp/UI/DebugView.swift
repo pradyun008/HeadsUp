@@ -54,11 +54,26 @@ struct DebugView: View {
       }
       .frame(maxWidth: .infinity, alignment: .leading)
 
-      Button(action: { model.isWatching ? model.stop() : model.start() }) {
-        Text(model.isWatching ? "Stop" : "Start").font(.title3.bold()).frame(maxWidth: .infinity, minHeight: 44)
+      if let message = model.recordingMessage {
+        Text(message).font(.caption).frame(maxWidth: .infinity, alignment: .leading)
       }
-      .buttonStyle(.borderedProminent)
-      .tint(model.isWatching ? .red : .accentColor)
+      HStack(spacing: 12) {
+        Button(action: { model.isWatching ? model.stop() : model.start() }) {
+          Text(model.isWatching ? "Stop" : "Start").font(.title3.bold()).frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(model.isWatching ? .red : .accentColor)
+
+        // Saves the incoming frames from whichever source is running to a .mov in Documents.
+        Button(action: { model.toggleRecording() }) {
+          Label(model.isRecording ? "Stop rec" : "Record", systemImage: model.isRecording ? "stop.circle.fill" : "record.circle")
+            .font(.title3.bold()).frame(minHeight: 44)
+        }
+        .buttonStyle(.bordered)
+        .tint(.red)
+        .disabled(!model.isWatching)
+        .accessibilityHint("Saves incoming video frames to a file for replay")
+      }
     }
     .padding()
   }
