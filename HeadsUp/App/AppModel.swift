@@ -93,6 +93,8 @@ final class AppModel {
   }
   let phoneHapticsSupported = PhoneHapticOutput.isSupported
   @ObservationIgnored private let phoneHaptics = PhoneHapticOutput()
+  /// Phone activity + pedometer → the wearer's walking state for "Is it moving?".
+  @ObservationIgnored private let motion = MotionSource()
   @ObservationIgnored private let outputSwitch = OutputSwitch()
   @ObservationIgnored private let simulatedBand = SimulatedBand()
   @ObservationIgnored private let band: BandOutput
@@ -158,6 +160,8 @@ final class AppModel {
       detectorMessage = error.localizedDescription
     }
     pipeline.config = config
+    let motion = self.motion
+    pipeline.wearerMotion = { motion.current }
     band.swapChannels = swapBandChannels
     let band = self.band
     let phoneHaptics = self.phoneHaptics
@@ -212,6 +216,7 @@ final class AppModel {
     frameSize = .zero
     UIApplication.shared.isIdleTimerDisabled = true
     band.start()
+    motion.start()
     source.start()
   }
 
@@ -260,6 +265,7 @@ final class AppModel {
     isWatching = false
     band.stop()
     phoneHaptics.stop()
+    motion.stop()
     preview = nil
     detections = []
     tracks = []

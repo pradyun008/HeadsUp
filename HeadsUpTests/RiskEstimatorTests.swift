@@ -13,7 +13,8 @@ final class RiskEstimatorTests: XCTestCase {
   /// Runs detections through the real tracker and risk estimator at 15 fps.
   private func run(
     duration: Double, fps: Double = 15, config: RiskConfig = RiskConfig(),
-    shift: (Double) -> Double = { _ in 0 }, detections: (Double) -> [Detection]
+    shift: (Double) -> Double = { _ in 0 }, wearer: WearerMotion = .stationary,
+    detections: (Double) -> [Detection]
   ) -> [Step] {
     var tracker = Tracker()
     var estimator = RiskEstimator()
@@ -26,7 +27,7 @@ final class RiskEstimatorTests: XCTestCase {
       let frameShift = offset - lastOffset
       lastOffset = offset
       let tracks = tracker.update(detections(t), at: t, frameShift: frameShift)
-      steps.append(Step(time: t, frame: estimator.update(tracks: tracks, time: t, frameShift: frameShift)))
+      steps.append(Step(time: t, frame: estimator.update(tracks: tracks, time: t, frameShift: frameShift, wearer: wearer)))
     }
     return steps
   }
@@ -196,5 +197,93 @@ final class RiskEstimatorTests: XCTestCase {
     XCTAssertEqual(e.level(forTau: 3), 1)
     XCTAssertEqual(e.level(forTau: 2), 2)
     XCTAssertEqual(e.level(forTau: 1), 3)
+  }
+
+  // Distance from box height: focal length × typical height ÷ box height.
+  func testDistanceFromBoxHeight() {
+    // Person (1.7 m), f = 0.6 frame heights, box 0.34 frame heights tall → 0.6 × 1.7 / 0.34 = 3.0 m.
+    let person = RiskEstimator.distance(objectClass: .person, top: 0.30, bottom: 0.64, focalLength: 0.6)
+    XCTAssertEqual(person?.metres ?? 0, 3.0, accuracy: 1e-9)
+    XCTAssertEqual(person?.reliable, true)
+    // Half the box height → twice as far.
+    let farther = RiskEstimator.distance(objectClass: .person, top: 0.40, bottom: 0.57, focalLength: 0.6)
+    XCTAssertEqual(farther?.metres ?? 0, 6.0, accuracy: 1e-9)
+    // Car (1.5 m), box 0.15 tall → 0.6 × 1.5 / 0.15 = 6.0 m.
+    let car = RiskEstimator.distance(objectClass: .car, top: 0.45, bottom: 0.60, focalLength: 0.6)
+    XCTAssertEqual(car?.metres ?? 0, 6.0, accuracy: 1e-9)
+    // A box with no height has no distance.
+    XCTAssertNil(RiskEstimator.distance(objectClass: .person, top: 0.5, bottom: 0.5, focalLength: 0.6))
+  }
+
+  // A box touching the top or bottom of the frame is cut off, so its distance is marked unreliable.
+  func testCutOffBoxDistanceIsUnreliable() {
+    XCTAssertEqual(RiskEstimator.distance(objectClass: .person, top: 0.0, bottom: 0.8, focalLength: 0.6)?.reliable, false)
+    XCTAssertEqual(RiskEstimator.distance(objectClass: .person, top: 0.2, bottom: 1.0, focalLength: 0.6)?.reliable, false)
+  }
+
+  // Every tracked object gets a distance on every frame, including before it can be judged ("too new").
+  func testEveryTrackGetsDistanceEveryFrame() {
+    let detections: (Double) -> [Detection] = { _ in
+      [Detection(objectClass: .person, confidence: 0.9, left: -0.1, right: 0.1, top: 0.30, bottom: 0.64),
+       Detection(objectClass: .car, confidence: 0.9, left: 0.4, right: 0.8, top: 0.45, bottom: 0.60)]
+    }
+    let steps = run(duration: 1, detections: detections)
+    for step in steps {
+      XCTAssertEqual(step.frame.assessments.count, 2)
+      for a in step.frame.assessments { XCTAssertNotNil(a.distance) }
+    }
+    // On the first frame nothing can be judged yet, but the distance is already there.
+    XCTAssertTrue(steps[0].frame.assessments.allSatisfy { $0.state == .tooNew && $0.distance != nil })
+  }
+
+  // MARK: - "Is it moving?"
+
+  /// A person centred in the frame at forward distance z(t), sized with the app's own constants
+  /// (box height = focal length × 1.7 m ÷ distance). `cutOffTop` pins the box to the top edge.
+  private func person(at z: Double, cutOffTop: Bool = false) -> Detection {
+    let h = MeasuredConstants.focalLength * MeasuredConstants.typicalHeight(of: .person) / z
+    let w = h * 0.4
+    let top = cutOffTop ? 0.0 : 0.5 - h / 2
+    return Detection(objectClass: .person, confidence: 0.9, left: -w / 2, right: w / 2, top: top, bottom: top + h)
+  }
+
+  // Wearer walks at 1.4 m/s toward a STANDING person → "walking into", never an alert.
+  func testWalkingIntoStandingPersonIsSuppressed() {
+    let steps = run(duration: 3.9, wearer: .walking(speed: 1.4, fromPace: true)) { t in [self.person(at: 8 - 1.4 * t)] }
+    let judged = steps.compactMap(\.only).filter { $0.ownSpeed != nil }
+    XCTAssertFalse(judged.isEmpty)
+    XCTAssertEqual(steps.map(\.maxLevel).max(), 0)
+    // Its own speed comes out near 0 (closing ≈ the wearer's 1.4 m/s).
+    XCTAssertEqual(judged.last!.ownSpeed!, 0, accuracy: 0.3)
+    XCTAssertEqual(judged.last!.state, .walkingInto)
+    // Not suppressed on the very first judged frame: it takes several frames below the cutoff.
+    XCTAssertEqual(judged.first!.state, .onCourse)
+  }
+
+  // Wearer walks at 1.4 m/s, a person walks at them at 1.4 m/s → own speed ≈ 1.4, alerts.
+  func testPersonWalkingAtWalkingWearerAlerts() {
+    let steps = run(duration: 2.3, wearer: .walking(speed: 1.4, fromPace: true)) { t in [self.person(at: 8 - 2.8 * t)] }
+    XCTAssertGreaterThan(steps.map(\.maxLevel).max() ?? 0, 0)
+    XCTAssertFalse(steps.compactMap(\.only).contains { $0.state == .walkingInto })
+    let last = steps.compactMap(\.only).last { $0.ownSpeed != nil }!
+    XCTAssertEqual(last.ownSpeed!, 1.4, accuracy: 0.3)
+  }
+
+  // Wearer standing still → anything growing on course counts as moving (behaviour as before).
+  func testStationaryWearerKeepsOldBehaviour() {
+    let steps = run(duration: 3.9) { t in [self.person(at: 8 - 1.4 * t)] }
+    XCTAssertGreaterThan(steps.map(\.maxLevel).max() ?? 0, 0)
+    XCTAssertFalse(steps.compactMap(\.only).contains { $0.state == .walkingInto })
+    XCTAssertTrue(steps.allSatisfy { $0.frame.wearer == .stationary })
+  }
+
+  // A box cut off from its first frame never has a reliable distance → never suppressed (no misses).
+  func testNeverReliableDistanceIsNotSuppressed() {
+    let steps = run(duration: 3.9, wearer: .walking(speed: 1.4, fromPace: true)) { t in
+      [self.person(at: 8 - 1.4 * t, cutOffTop: true)]
+    }
+    XCTAssertTrue(steps.compactMap(\.only).allSatisfy { !$0.distanceReliable })
+    XCTAssertFalse(steps.compactMap(\.only).contains { $0.state == .walkingInto })
+    XCTAssertGreaterThan(steps.map(\.maxLevel).max() ?? 0, 0)
   }
 }

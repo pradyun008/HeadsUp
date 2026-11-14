@@ -59,6 +59,7 @@ targets:
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         NSCameraUsageDescription: The phone camera can stand in for the glasses camera.
+        NSMotionUsageDescription: Uses your walking speed to tell things moving toward you apart from things you are walking toward.
     dependencies:
       - package: MetaWearablesDAT
         product: MWDATCore

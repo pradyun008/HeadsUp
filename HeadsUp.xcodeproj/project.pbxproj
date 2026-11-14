@@ -40,7 +40,9 @@
 		B509175B28DD13F90AA15C73 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB36975701A88C4F8CC081D2 /* MainView.swift */; };
 		B7DF1C883D9382186D1C1648 /* Detector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F52DC656B69451607AB1C7DF /* Detector.swift */; };
 		C12AA3FC0FB18DC33CE1FC8B /* yolo11n.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 1C8E86A2A5D810A14EB462B7 /* yolo11n.mlpackage */; };
+		C176FC941244FDF6907B660E /* WalkingSpeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17AC6DAA7C192A79B727061B /* WalkingSpeed.swift */; };
 		D234DFF0F358D9092D37DCCE /* SpeechOutput.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21CB7E263597F445BF1CBFA /* SpeechOutput.swift */; };
+		D2582C9E9E7E1B89C2F8E185 /* MeasuredConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF73736AB0830DA925BD40F /* MeasuredConstants.swift */; };
 		D5EC704DBFCC1C7FF587E92D /* ClipHarnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BED86091D97F06E3A092B3D /* ClipHarnessTests.swift */; };
 		DFAE8C6A1A495B7694C8197E /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D703D6BE9BDD486C97F20C /* AppModel.swift */; };
 		E385EE7674C0079ABB3D89F2 /* FrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20F15D03B3D1D04D59F91969 /* FrameSource.swift */; };
@@ -48,6 +50,7 @@
 		E8278660650B9D30A65AE75A /* MWDATCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6AAAF32E3D8D09B7B90C09A7 /* MWDATCore */; };
 		EC0CE583E400BEDAFF485B5E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BCFC636048FE030AE9F5144 /* SettingsView.swift */; };
 		F2CDD64E89CCF5EF0DBDDF29 /* Pipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A719907EA705A96255520CEA /* Pipeline.swift */; };
+		F40929BCE03110653CC0AB5F /* WalkingSpeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 324FE3F1F39929B9A9181CA0 /* WalkingSpeedTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,12 +68,14 @@
 		0E7B357D261A37E04530A3D9 /* VideoFileFrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoFileFrameSource.swift; sourceTree = "<group>"; };
 		12D9728014860FB10C431F07 /* AlertPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPolicyTests.swift; sourceTree = "<group>"; };
 		15B4892324526448DB98EEFC /* ClipHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipHarness.swift; sourceTree = "<group>"; };
+		17AC6DAA7C192A79B727061B /* WalkingSpeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkingSpeed.swift; sourceTree = "<group>"; };
 		1BCFC636048FE030AE9F5144 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		1BED86091D97F06E3A092B3D /* ClipHarnessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipHarnessTests.swift; sourceTree = "<group>"; };
 		1C8E86A2A5D810A14EB462B7 /* yolo11n.mlpackage */ = {isa = PBXFileReference; path = yolo11n.mlpackage; sourceTree = "<group>"; };
 		1C938C348365D581F8C65854 /* PhoneHapticOutput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneHapticOutput.swift; sourceTree = "<group>"; };
 		20F15D03B3D1D04D59F91969 /* FrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameSource.swift; sourceTree = "<group>"; };
 		25AA5B442B811C270B369D47 /* MockGlasses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockGlasses.swift; sourceTree = "<group>"; };
+		324FE3F1F39929B9A9181CA0 /* WalkingSpeedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkingSpeedTests.swift; sourceTree = "<group>"; };
 		3A36B781F54567A61B821601 /* Tracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tracker.swift; sourceTree = "<group>"; };
 		3E638EDAE9868F1D0D61572D /* ScenarioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenarioTests.swift; sourceTree = "<group>"; };
 		475BB8DAA2B4611B953BAACB /* ScenarioFrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenarioFrameSource.swift; sourceTree = "<group>"; };
@@ -96,6 +101,7 @@
 		E2AE84CF942FDB4369E8B8B4 /* HeadsUpApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadsUpApp.swift; sourceTree = "<group>"; };
 		E51C5F42A3E35C2D7BCC298A /* HeadMotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadMotionTests.swift; sourceTree = "<group>"; };
 		EA5C482A2525D385B0B11267 /* Detection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Detection.swift; sourceTree = "<group>"; };
+		EBF73736AB0830DA925BD40F /* MeasuredConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasuredConstants.swift; sourceTree = "<group>"; };
 		ECA092D8CC9E44DDC16E2737 /* AlertPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPolicy.swift; sourceTree = "<group>"; };
 		EFAD5E9DFBC21806B4F13D1B /* DebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugView.swift; sourceTree = "<group>"; };
 		F52DC656B69451607AB1C7DF /* Detector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Detector.swift; sourceTree = "<group>"; };
@@ -159,10 +165,12 @@
 				F52DC656B69451607AB1C7DF /* Detector.swift */,
 				20F15D03B3D1D04D59F91969 /* FrameSource.swift */,
 				D2F597E0FB634D85B038E3AE /* HeadMotionEstimator.swift */,
+				EBF73736AB0830DA925BD40F /* MeasuredConstants.swift */,
 				A719907EA705A96255520CEA /* Pipeline.swift */,
 				F6F9F0A690D2DAD38DF15BC8 /* RiskEstimator.swift */,
 				9B4F8FB47F6A8DEE6CA3C956 /* Scenario.swift */,
 				3A36B781F54567A61B821601 /* Tracker.swift */,
+				17AC6DAA7C192A79B727061B /* WalkingSpeed.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -223,6 +231,7 @@
 				AE9E030751B218E1DC844CFF /* RiskEstimatorTests.swift */,
 				3E638EDAE9868F1D0D61572D /* ScenarioTests.swift */,
 				07D18C9A6DE5741F3F61A581 /* TrackerTests.swift */,
+				324FE3F1F39929B9A9181CA0 /* WalkingSpeedTests.swift */,
 				CD806CBE089AC4BD156555D4 /* Fixtures */,
 			);
 			path = HeadsUpTests;
@@ -365,6 +374,7 @@
 				422E2AFBD62F8F269CA2231C /* RiskEstimatorTests.swift in Sources */,
 				963EBFB1DBE4102781D25621 /* ScenarioTests.swift in Sources */,
 				8937990E76E896B2919C5EE3 /* TrackerTests.swift in Sources */,
+				F40929BCE03110653CC0AB5F /* WalkingSpeedTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -386,6 +396,7 @@
 				2920C2192E1E40F2595C9B8B /* HeadMotionEstimator.swift in Sources */,
 				1E82C0F89E0C67FACB99937F /* HeadsUpApp.swift in Sources */,
 				B509175B28DD13F90AA15C73 /* MainView.swift in Sources */,
+				D2582C9E9E7E1B89C2F8E185 /* MeasuredConstants.swift in Sources */,
 				1AF2E0E522162ABFEB52DCE3 /* MockGlasses.swift in Sources */,
 				4B07B5CBF3295AC5F03C1EBF /* PhoneCameraFrameSource.swift in Sources */,
 				845D9A60663A6A2B8F71EC83 /* PhoneHapticOutput.swift in Sources */,
@@ -397,6 +408,7 @@
 				D234DFF0F358D9092D37DCCE /* SpeechOutput.swift in Sources */,
 				9A806B8BD3E2EFE065CDA21C /* Tracker.swift in Sources */,
 				3F806261E6B946A3A8AF9FB1 /* VideoFileFrameSource.swift in Sources */,
+				C176FC941244FDF6907B660E /* WalkingSpeed.swift in Sources */,
 				C12AA3FC0FB18DC33CE1FC8B /* yolo11n.mlpackage in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

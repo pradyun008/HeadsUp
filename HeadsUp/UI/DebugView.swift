@@ -22,6 +22,8 @@ struct DebugView: View {
           }
         }
         legend
+        // "Is it moving?" input: what the phone thinks the wearer is doing.
+        Text(Self.wearerText(model.risk.wearer)).font(.callout.monospacedDigit())
         LevelBars(left: model.leftLevel, right: model.rightLevel)
         if let cue = model.lastCue {
           Text("Last spoken: “\(cue)”").font(.callout.bold())
@@ -83,7 +85,7 @@ extension DebugView {
   fileprivate var legend: some View {
     HStack(spacing: 10) {
       ForEach(
-        [("not approaching", Color.gray), ("passing", .blue), ("on course", .orange), ("urgent", .red)],
+        [("not approaching", Color.gray), ("passing", .blue), ("walking into", .teal), ("on course", .orange), ("urgent", .red)],
         id: \.0
       ) { name, color in
         HStack(spacing: 4) {
@@ -93,7 +95,16 @@ extension DebugView {
       }
     }
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel("Box colours: grey not approaching, blue passing, orange on course, red urgent")
+    .accessibilityLabel("Box colours: grey not approaching, blue passing, teal walking into, orange on course, red urgent")
+  }
+
+  /// "Wearer: walking 1.3 m/s (pace)" / "(default)" / "Wearer: stationary".
+  static func wearerText(_ wearer: WearerMotion) -> String {
+    switch wearer {
+    case .stationary: return "Wearer: stationary (anything on course counts as moving)"
+    case .walking(let speed, let fromPace):
+      return String(format: "Wearer: walking %.1f m/s (%@)", speed, fromPace ? "pace" : "default, no pace yet")
+    }
   }
 }
 
@@ -205,6 +216,7 @@ struct FrameOverlayView: View {
     switch a.state {
     case .tooNew, .notApproaching: return .gray
     case .passing: return .blue
+    case .walkingInto: return .teal
     case .onCourse:
       switch a.level {
       case 3: return .red
@@ -224,10 +236,17 @@ struct FrameOverlayView: View {
       case .tooNew: text += " · new"
       case .notApproaching: text += " · not approaching"
       case .passing: text += " · passing"
+      case .walkingInto: text += " · walking into"
       case .onCourse: text += " · L\(a.level)" + (a.side.map { " \($0.rawValue)" } ?? "")
       }
       if a.held { text += " · held" }
+      // "Is it moving?": the object's own speed toward the wearer (estimate).
+      if let own = a.ownSpeed { text += String(format: " · own %.1f m/s", own) }
+      // Distance is an estimate from box height; "?" marks a box cut off by the frame edge.
+      if let z = a.distance { text += String(format: " · Z≈%.1f m", z) + (a.distanceReliable ? "" : "?") }
     }
+    // Raw box height in frame heights, for the focal-length tape test.
+    text += String(format: " · box h %.3f", track.bottom - track.top)
     return text
   }
 }
