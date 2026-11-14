@@ -188,7 +188,7 @@ Entry template:
 - Idea: a custom band signal when judgment is paused/dropped. Must be a STATUS ("not watching right now"), never "look forward" (rule 1). Needs a firmware change (a value or byte beyond `[left, right]`).
 
 ### D-29 · Keep speech?
-- Date: 2026-11-14 · Status: Open
+- Date: 2026-11-14 · Status: Decided (Roman, 2026-11-14): speech stays. Navigation is voice-only and hazard speech interrupts it. See `navigate-on-main-spec.md`.
 - Note: Pradyun raised dropping speech; undecided. Speech code untouched.
 
 ### D-30 · Tracker double-counts head turns in its prediction
@@ -199,3 +199,21 @@ Entry template:
 - Date: 2026-11-14 · Status: Decided + implemented · By: Pradyun
 - Decision: when a box is cut off by the frame, "Is it moving?" uses that object's last reliable distance; an object that never had one is never suppressed.
 - Why: avoid missed hazards. A stale distance reads too far, which errs toward "moving" (toward warning).
+
+## Navigation (added 2026-11-14)
+
+### D-31 · Walking navigation added beside the hazard loop
+- Date: 2026-11-14 · Status: Decided · By: Roman
+- Decision: voice-only turn-by-turn navigation (MapKit), specified in `headsup-navigate-spec.md`. The band stays hazard-only. Hazard speech cuts off navigation speech; the cue returns with a fresh distance.
+- Affects: `HeadsUp/Nav/`, `SpeechOutput.swift`, `AppModel.swift`. Reverses the "no point-A-to-B navigation" line in `CLAUDE.md`.
+
+### D-32 · Navigation does not feed GPS speed into "Is it moving?"
+- Date: 2026-11-14 · Status: Decided · By: Roman
+- Decision: wearer speed stays pedometer-only (D-14).
+- Why: GPS speed between buildings is noisy and lags; a wearer speed that reads too high hides real movers.
+- Alternatives considered: GPS as the fallback instead of the 1.0 m/s default; the lower of GPS and pedometer.
+
+### D-33 · Replay demo uses the real pedometer
+- Date: 2026-11-14 · Status: Decided · By: Roman
+- Decision: during a replayed GPS walk the hazard check uses the real sensors (wearer stationary at the table). No faked wearer motion.
+- Consequence: the table demo cannot show a standing person being suppressed as "walking into".
