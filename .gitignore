@@ -6,3 +6,8 @@ xcuserdata/
 .venv/
 *.pt
 .claude/
+
+# Secrets and CoStar data (organizer rule: keep out of the repo)
+.env
+server/.env
+server/cache/
