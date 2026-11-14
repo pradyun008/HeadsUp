@@ -59,6 +59,8 @@ targets:
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         NSCameraUsageDescription: The phone camera can stand in for the glasses camera.
+        NSMicrophoneUsageDescription: The microphone hears your spoken destination after you press the button.
+        NSSpeechRecognitionUsageDescription: Your spoken destination is turned into text on this phone.
         NSLocationWhenInUseUsageDescription: Your position is used to speak walking directions.
     dependencies:
       - package: MetaWearablesDAT

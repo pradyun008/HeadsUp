@@ -10,6 +10,11 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
   private var arbiter = SpeechArbiter()
   private(set) var lastSpoken: String?
   var onSpoken: ((String) -> Void)?
+  /// Called with the text when an utterance has been spoken to the end (not when it was cut off).
+  var onFinished: ((String) -> Void)?
+  /// True while the microphone is open for a spoken request. The audio session is left active
+  /// then, because switching it off would close the microphone.
+  var microphoneOpen = false
   /// Re-words a delayed navigation cue for the wearer's current position, or returns nil to drop it.
   /// Set by whoever owns the navigation engine.
   var refreshNav: SpeechArbiter.Refresh = { $0 }
@@ -72,12 +77,15 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
   }
 
   private func deactivate() {
+    guard !microphoneOpen else { return }
     // Lets ducked audio come back to full volume.
     try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
   }
 
   nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+    let text = utterance.speechString
     Task { @MainActor in
+      self.onFinished?(text)
       if let next = self.arbiter.finished(refresh: self.refreshNav) { self.start(next) } else { self.deactivate() }
     }
   }

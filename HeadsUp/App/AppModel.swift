@@ -104,6 +104,8 @@ final class AppModel {
     }
   }
   @ObservationIgnored private let speech = SpeechOutput()
+  /// Walking navigation. Voice only: the band stays hazard-only, so a buzz always means a hazard.
+  let nav = NavController()
   /// True once frames have flowed since Start; decides between "Watching" and "Watching resumed".
   @ObservationIgnored private var hasRun = false
   @ObservationIgnored private var wasInterrupted = false
@@ -174,6 +176,7 @@ final class AppModel {
     simulatedBand.onWrite = { [weak self] packet, _ in
       Task { @MainActor in self?.bandWrote(packet) }
     }
+    connectNavigation()
     attach(glasses, kind: .glasses)
     attach(phoneCamera, kind: .phoneCamera)
     attach(scenarioSource, kind: .scenario)
@@ -182,6 +185,25 @@ final class AppModel {
   }
 
   var sourceName: String { source.displayName }
+
+  /// Navigation speaks through the same speech output as hazards, which always puts hazards first.
+  private func connectNavigation() {
+    let speech = self.speech
+    nav.speakCue = { [weak self] cue in
+      guard self?.speechEnabled == true else { return }
+      speech.speak(cue)
+    }
+    nav.speakNotice = { [weak self] text in
+      guard self?.speechEnabled == true else { return }
+      speech.speak(SpeechCue(text: text, priority: 0, trackID: nil))
+    }
+    nav.stopSpeech = { speech.stopNavigationSpeech() }
+    nav.listeningChanged = { speech.microphoneOpen = $0 }
+    // A navigation cue delayed by a hazard is re-worded for the wearer's new position.
+    speech.refreshNav = { [weak nav] cue in nav?.engine.refreshed(cue) }
+    speech.onFinished = { [weak nav] text in nav?.spoke(text) }
+    nav.activate()
+  }
 
   private func attach(_ source: any FrameSource, kind: SourceKind) {
     source.onStatusChange = { [weak self] status in
@@ -321,6 +343,8 @@ final class AppModel {
     // Navigation speech is held while a hazard is high or urgent, and released when it passes.
     speech.setHazardLevel(max(leftLevel, rightLevel))
     for cue in output.alert.cues {
+      // A hazard is never delayed by a spoken request: the microphone closes and the request is dropped.
+      if cue.priority >= 2 { nav.cancelListening() }
       lastCue = cue.text
       if speechEnabled { speech.speak(cue) }
     }
