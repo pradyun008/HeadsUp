@@ -266,6 +266,7 @@ final class AppModel {
     risk = RiskFrame()
     leftLevel = 0
     rightLevel = 0
+    speech.setHazardLevel(0)  // nothing is being watched, so nothing holds navigation speech back
     fps = 0
     processedFPS = 0
     UIApplication.shared.isIdleTimerDisabled = false
@@ -317,6 +318,8 @@ final class AppModel {
     risk = output.risk
     leftLevel = output.alert.leftLevel
     rightLevel = output.alert.rightLevel
+    // Navigation speech is held while a hazard is high or urgent, and released when it passes.
+    speech.setHazardLevel(max(leftLevel, rightLevel))
     for cue in output.alert.cues {
       lastCue = cue.text
       if speechEnabled { speech.speak(cue) }
