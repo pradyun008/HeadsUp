@@ -57,6 +57,8 @@ final class AppModel {
   private(set) var detections: [Detection] = []
   private(set) var tracks: [Track] = []
   private(set) var risk = RiskFrame()
+  /// Priority: the most urgent object right now (lowest tau), from AlertPolicy.
+  private(set) var topTrackID: Int?
   /// Smoothed output levels, 0–3. "Left" and "right" are camera-relative.
   private(set) var leftLevel = 0
   private(set) var rightLevel = 0
@@ -93,6 +95,8 @@ final class AppModel {
   }
   let phoneHapticsSupported = PhoneHapticOutput.isSupported
   @ObservationIgnored private let phoneHaptics = PhoneHapticOutput()
+  /// Phone activity + pedometer → the wearer's walking state for "Is it moving?".
+  @ObservationIgnored private let motion = MotionSource()
   @ObservationIgnored private let outputSwitch = OutputSwitch()
   @ObservationIgnored private let simulatedBand = SimulatedBand()
   @ObservationIgnored private let band: BandOutput
@@ -160,6 +164,8 @@ final class AppModel {
       detectorMessage = error.localizedDescription
     }
     pipeline.config = config
+    let motion = self.motion
+    pipeline.wearerMotion = { motion.current }
     band.swapChannels = swapBandChannels
     let band = self.band
     let phoneHaptics = self.phoneHaptics
@@ -234,6 +240,7 @@ final class AppModel {
     frameSize = .zero
     UIApplication.shared.isIdleTimerDisabled = true
     band.start()
+    motion.start()
     source.start()
   }
 
@@ -282,6 +289,7 @@ final class AppModel {
     isWatching = false
     band.stop()
     phoneHaptics.stop()
+    motion.stop()
     preview = nil
     detections = []
     tracks = []
@@ -338,6 +346,7 @@ final class AppModel {
     detections = output.detections
     tracks = output.tracks
     risk = output.risk
+    topTrackID = output.alert.topTrackID
     leftLevel = output.alert.leftLevel
     rightLevel = output.alert.rightLevel
     // Navigation speech is held while a hazard is high or urgent, and released when it passes.

@@ -25,15 +25,18 @@ struct PipelineStages {
 
   /// - Parameter scriptedShift: for scripted scenes, the known head-turn shift; nil to measure
   ///   it from the image.
+  /// - Parameter wearer: what the wearer is doing (phone motion sensors). Recorded clips have no
+  ///   motion data, so they run as stationary (the behaviour before "Is it moving?" existed).
   mutating func run(
-    detections: [Detection], pixelBuffer: CVPixelBuffer, scriptedShift: Double?, time: Double, config: PipelineConfig
+    detections: [Detection], pixelBuffer: CVPixelBuffer, scriptedShift: Double?, time: Double, config: PipelineConfig,
+    wearer: WearerMotion = .stationary
   ) -> Result {
     // Global image shift since the last processed frame (head turn).
     let frameShift = scriptedShift ?? headMotion.shift(for: pixelBuffer)
     tracker.config = config.tracker
     let tracks = tracker.update(detections, at: time, frameShift: frameShift)
     riskEstimator.config = config.risk
-    let risk = riskEstimator.update(tracks: tracks, time: time, frameShift: frameShift)
+    let risk = riskEstimator.update(tracks: tracks, time: time, frameShift: frameShift, wearer: wearer)
     alertPolicy.config = config.alert
     let alert = alertPolicy.update(risk: risk, tracks: tracks, time: time)
     return Result(tracks: tracks, risk: risk, alert: alert, frameShift: frameShift)

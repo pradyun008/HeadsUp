@@ -191,3 +191,45 @@ final class SpeechQueueTests: XCTestCase {
     XCTAssertEqual(q.finished(), cue("person, left", 2))
   }
 }
+
+final class PriorityTests: XCTestCase {
+  private func track(_ id: Int, _ cls: ObjectClass = .person) -> Track {
+    Track(id: id, objectClass: cls, confidence: 0.9, observations: [], left: -0.1, right: 0.1, top: 0.4, bottom: 0.8,
+          lastSeen: 0, isCoasting: false, hits: 10)
+  }
+
+  // MARK: - Priority (rank by tau)
+
+  private func ranked(_ items: [(id: Int, level: Int, tau: Double, center: Double)], frames: Int = 3) -> AlertState {
+    var policy = AlertPolicy()
+    let risk = RiskFrame(assessments: items.map {
+      RiskAssessment(trackID: $0.id, state: .onCourse, tau: $0.tau, level: $0.level, side: .ahead,
+                     predictedLeft: $0.center - 0.1, predictedRight: $0.center + 0.1)
+    })
+    var tracks: [Track] = []
+    for item in items { tracks.append(track(item.id, .person)) }
+    var state = AlertState()
+    for i in 0..<frames { state = policy.update(risk: risk, tracks: tracks, time: Double(i) / 15) }
+    return state
+  }
+
+  // Both level 2: the one arriving sooner (tau 1.6 s) wins over the older track (tau 2.4 s).
+  func testLowestTauWins() {
+    let state = ranked([(1, 2, 2.4, 0), (2, 2, 1.6, 0)])
+    XCTAssertEqual(state.topTrackID, 2)
+    XCTAssertEqual(state.cues.map(\.trackID), [2, 1])
+  }
+
+  // Same tau: the one nearest the centre (most directly at the wearer) wins.
+  func testTauTieGoesToNearestCentre() {
+    let state = ranked([(1, 2, 2.0, -0.12), (2, 2, 2.0, 0.03)])
+    XCTAssertEqual(state.topTrackID, 2)
+  }
+
+  // Objects at level 0 are never the top object.
+  func testLevelZeroIsNeverTop() {
+    let state = ranked([(1, 0, 0.5, 0), (2, 1, 3.5, 0)])
+    XCTAssertEqual(state.topTrackID, 2)
+    XCTAssertNil(ranked([(1, 0, 0.5, 0)]).topTrackID)
+  }
+}

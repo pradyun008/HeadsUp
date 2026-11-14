@@ -62,6 +62,7 @@ targets:
         NSMicrophoneUsageDescription: The microphone hears your spoken destination after you press the button.
         NSSpeechRecognitionUsageDescription: Your spoken destination is turned into text on this phone.
         NSLocationWhenInUseUsageDescription: Your position is used to speak walking directions.
+        NSMotionUsageDescription: Uses your walking speed to tell things moving toward you apart from things you are walking toward.
     dependencies:
       - package: MetaWearablesDAT
         product: MWDATCore

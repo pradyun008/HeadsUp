@@ -6,7 +6,9 @@ struct DebugView: View {
 
   var body: some View {
     VStack(spacing: 12) {
-      FrameOverlayView(image: model.preview, tracks: model.tracks, risk: model.risk, corridor: model.corridor)
+      FrameOverlayView(
+        image: model.preview, tracks: model.tracks, risk: model.risk, corridor: model.corridor,
+        topTrackID: model.topTrackID)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
       VStack(alignment: .leading, spacing: 4) {
@@ -22,6 +24,8 @@ struct DebugView: View {
           }
         }
         legend
+        // "Is it moving?" input: what the phone thinks the wearer is doing.
+        Text(Self.wearerText(model.risk.wearer)).font(.callout.monospacedDigit())
         LevelBars(left: model.leftLevel, right: model.rightLevel)
         if let cue = model.lastCue {
           Text("Last spoken: “\(cue)”").font(.callout.bold())
@@ -83,7 +87,7 @@ extension DebugView {
   fileprivate var legend: some View {
     HStack(spacing: 10) {
       ForEach(
-        [("not approaching", Color.gray), ("passing", .blue), ("on course", .orange), ("urgent", .red)],
+        [("not approaching", Color.gray), ("passing", .blue), ("walking into", .teal), ("on course", .orange), ("urgent", .red)],
         id: \.0
       ) { name, color in
         HStack(spacing: 4) {
@@ -93,7 +97,16 @@ extension DebugView {
       }
     }
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel("Box colours: grey not approaching, blue passing, orange on course, red urgent")
+    .accessibilityLabel("Box colours: grey not approaching, blue passing, teal walking into, orange on course, red urgent")
+  }
+
+  /// "Wearer: walking 1.3 m/s (pace)" / "(default)" / "Wearer: stationary".
+  static func wearerText(_ wearer: WearerMotion) -> String {
+    switch wearer {
+    case .stationary: return "Wearer: stationary (anything on course counts as moving)"
+    case .walking(let speed, let fromPace):
+      return String(format: "Wearer: walking %.1f m/s (%@)", speed, fromPace ? "pace" : "default, no pace yet")
+    }
   }
 }
 
@@ -135,6 +148,8 @@ struct FrameOverlayView: View {
   let tracks: [Track]
   var risk = RiskFrame()
   var corridor = 0.15
+  /// Priority: the most urgent object (lowest tau). Drawn with a thicker outline and "TOP".
+  var topTrackID: Int?
 
   var body: some View {
     ZStack {
@@ -173,8 +188,8 @@ struct FrameOverlayView: View {
     // Dashed outline = coasting: not seen this frame, position predicted from its last motion.
     context.stroke(
       Path(rect), with: .color(color),
-      style: StrokeStyle(lineWidth: 3, dash: d.isCoasting ? [6, 5] : []))
-    let label = Text(Self.label(for: d, assessment))
+      style: StrokeStyle(lineWidth: d.id == topTrackID ? 6 : 3, dash: d.isCoasting ? [6, 5] : []))
+    let label = Text((d.id == topTrackID ? "TOP · " : "") + Self.label(for: d, assessment))
       .font(.caption.bold()).foregroundStyle(.white)
     let resolved = context.resolve(label)
     let textSize = resolved.measure(in: size)
@@ -205,6 +220,7 @@ struct FrameOverlayView: View {
     switch a.state {
     case .tooNew, .notApproaching: return .gray
     case .passing: return .blue
+    case .walkingInto: return .teal
     case .onCourse:
       switch a.level {
       case 3: return .red
@@ -224,10 +240,21 @@ struct FrameOverlayView: View {
       case .tooNew: text += " · new"
       case .notApproaching: text += " · not approaching"
       case .passing: text += " · passing"
+      case .walkingInto: text += " · walking into"
       case .onCourse: text += " · L\(a.level)" + (a.side.map { " \($0.rawValue)" } ?? "")
       }
       if a.held { text += " · held" }
+      // Level kept from going down because the box is cut off by the frame edge.
+      if a.cutOffHold { text += " · cut off, level held" }
+      // "Is it moving?": the object's own speed toward the wearer (estimate).
+      if let own = a.ownSpeed { text += String(format: " · own %.1f m/s", own) }
+      // Distance is an estimate from box height; "?" marks a box cut off by the frame edge.
+      if let z = a.distance { text += String(format: " · Z≈%.1f m", z) + (a.distanceReliable ? "" : "?") }
     }
+    // Suspicious size jump being checked (merge, someone in front, glitch): left out of tau.
+    if track.hasCandidate { text += " · jump?" }
+    // Raw box height in frame heights, for the focal-length tape test.
+    text += String(format: " · box h %.3f", track.bottom - track.top)
     return text
   }
 }

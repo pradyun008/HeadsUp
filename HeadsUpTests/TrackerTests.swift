@@ -135,3 +135,79 @@ final class ConfigTests: XCTestCase {
     XCTAssertEqual(tracker.tracks[0].right - tracker.tracks[0].left, width, accuracy: 1e-9)
   }
 }
+
+final class JumpFilterTests: XCTestCase {
+  // MARK: - Suspicious jumps (SizeFilter + candidate history)
+
+  /// A person at forward distance z (m), centred, box height from the placeholder focal length,
+  /// box size scaled by `scale` (a merge or glitch), with optional ±`jitter` relative noise.
+  private func person(z: Double, scale: Double = 1, jitter: Double = 0, noise: () -> Double = { 0 }) -> Detection {
+    let h = 0.6 * 1.7 / z * scale * (1 + jitter * noise())
+    let w = 0.5 * h
+    return Detection(objectClass: .person, confidence: 0.9, left: -w / 2, right: w / 2, top: 0.5 - h / 2, bottom: 0.5 + h / 2)
+  }
+
+  private func makeNoise(seed start: UInt64) -> () -> Double {
+    var seed = start
+    return {
+      seed = seed &* 6364136223846793005 &+ 1442695040888963407
+      return (Double(seed >> 33) / Double(1 << 31) - 0.5) * 2
+    }
+  }
+
+  // A real approach, even fast and close (2.8 m/s down to 1.2 m, tau ≈ 0.4 s), with jitter, is never flagged.
+  func testFastRealApproachIsNeverFlagged() {
+    var tracker = Tracker()
+    let noise = makeNoise(seed: 3)
+    var t = 0.0
+    while 10 - 2.8 * t > 1.2 {
+      let tracks = tracker.update([person(z: 10 - 2.8 * t, jitter: 0.02, noise: noise)], at: t)
+      XCTAssertEqual(tracks.count, 1)
+      XCTAssertFalse(tracks[0].hasCandidate, "flagged at t=\(t)")
+      t += 1.0 / 15
+    }
+  }
+
+  // A one-frame 30% jump is flagged, kept out of the main history, and dropped when the box returns.
+  func testOneFrameJumpIsKeptOutOfHistory() {
+    var tracker = Tracker()
+    let jumpAt = 20
+    for i in 0..<30 {
+      let t = Double(i) / 15
+      let tracks = tracker.update([person(z: 8 - 1.4 * t, scale: i == jumpAt ? 1.3 : 1)], at: t)
+      if i == jumpAt { XCTAssertTrue(tracks[0].hasCandidate) }
+      if i == jumpAt + 1 { XCTAssertFalse(tracks[0].hasCandidate) }
+    }
+    let jumpTime = Double(jumpAt) / 15
+    XCTAssertFalse(tracker.tracks[0].observations.contains { abs($0.time - jumpTime) < 1e-9 })
+  }
+
+  // A jump that lasts (two people merged into one box) is accepted after 3 frames, and the new
+  // history holds only post-jump boxes: old and new sizes never mix.
+  func testLastingJumpReplacesHistory() {
+    var tracker = Tracker()
+    let jumpAt = 20
+    var acceptedAt: Int?
+    for i in 0..<30 {
+      let t = Double(i) / 15
+      let tracks = tracker.update([person(z: 5, scale: i >= jumpAt ? 1.4 : 1)], at: t)
+      if i == jumpAt || i == jumpAt + 1 { XCTAssertTrue(tracks[0].hasCandidate, "i=\(i)") }
+      if acceptedAt == nil, i >= jumpAt, !tracks[0].hasCandidate { acceptedAt = i }
+    }
+    XCTAssertEqual(acceptedAt, jumpAt + MeasuredConstants.jumpAcceptFrames - 1)
+    let jumpTime = Double(jumpAt) / 15
+    XCTAssertTrue(tracker.tracks[0].observations.allSatisfy { $0.time >= jumpTime - 1e-9 })
+  }
+
+  // Boxes touching the frame edge are never flagged (their size is known to be wrong).
+  func testCutOffBoxIsNotFlagged() {
+    var tracker = Tracker()
+    for i in 0..<20 {
+      let t = Double(i) / 15
+      var d = person(z: 5)
+      if i >= 10 { d.top = 0; d.bottom = 1 }  // suddenly fills the height: cut off
+      let tracks = tracker.update([d], at: t)
+      XCTAssertFalse(tracks[0].hasCandidate, "i=\(i)")
+    }
+  }
+}

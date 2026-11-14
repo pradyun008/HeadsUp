@@ -46,6 +46,8 @@ final class Pipeline: @unchecked Sendable {
   }
 
   var onOutput: (@Sendable (Output) -> Void)?
+  /// Read once per frame: what the wearer is doing, for "Is it moving?". Stationary until set.
+  var wearerMotion: @Sendable () -> WearerMotion = { .stationary }
 
   private let detector: Detector?
   private let queue = DispatchQueue(label: "headsup.pipeline", qos: .userInitiated)
@@ -104,7 +106,7 @@ final class Pipeline: @unchecked Sendable {
       let result = stages.run(
         detections: detections, pixelBuffer: frame.pixelBuffer,
         scriptedShift: frame.scriptedDetections != nil ? frame.scriptedShift : nil,
-        time: frame.timestamp, config: config)
+        time: frame.timestamp, config: config, wearer: wearerMotion())
       let tracks = result.tracks, risk = result.risk, alert = result.alert
 
       var image: CGImage?
