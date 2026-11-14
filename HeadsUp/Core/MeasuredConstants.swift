@@ -19,6 +19,8 @@ import Foundation
 ///  - No activity reading yet (startup) means stationary: subtract nothing, so no misses.
 ///  - A cut-off box's distance is replaced by the object's last reliable distance; an object that
 ///    never had a reliable distance is never suppressed as "walking into".
+///  - A held tau keeps counting down as if the object kept its speed (see `maxPause`).
+///  - Real approach never makes a box jump in size from one frame to the next (see `jumpGate`).
 enum MeasuredConstants {
   // MARK: - Camera
 
@@ -88,4 +90,44 @@ enum MeasuredConstants {
   /// STATUS: GUESS (3 frames is 0.2 s at 15 fps).
   /// TEST: watch the debug label on the "teammate walks at you" recording for flicker.
   static let framesToSuppress = 3
+
+  // MARK: - Suspicious jumps (SizeFilter + candidate history in Tracker)
+
+  /// Expected frame-to-frame jitter of the detector's box size, as a fraction of the size.
+  ///
+  /// STATUS: GUESS (4%).
+  /// TEST: point the camera at a teammate standing still at 3–5 m, record 10 s, and look at how
+  /// much "box h" wobbles from frame to frame. Set this to about that wobble ÷ box h.
+  static let sizeJitter = 0.04
+
+  /// How much the box's growth rate may change by itself (speeding up, braking), relative to the
+  /// box. Higher = trusts the trend less = flags less.
+  ///
+  /// STATUS: GUESS (0.5, from synthetic tests: a walker, a runner and an accelerating bike all stay
+  /// under 1 on the "surprise" scale; a one-frame 30% jump scores about 4).
+  /// TEST: replay a clip of a bike speeding up toward the camera; no sighting should be flagged.
+  static let sizeRateNoise = 0.5
+
+  /// A box more than this many standard deviations from the filter's prediction is "suspicious":
+  /// left out of the tau fit and put into a candidate history instead.
+  ///
+  /// STATUS: GUESS (3). At 4% jitter, a one-frame jump of about 20% or more is flagged.
+  /// TEST: replay clips of two people crossing; the merge frames should show "jump?" on the debug
+  /// screen, normal walking frames should not.
+  static let jumpGate = 3.0
+
+  /// A jump that lasts this many frames in a row is accepted as real: the candidate history
+  /// replaces the old one. Until then the old judgment is held (tau counting down).
+  ///
+  /// STATUS: GUESS (3 frames = 0.2 s at 15 fps).
+  static let jumpAcceptFrames = 3
+
+  // MARK: - Paused judgment
+
+  /// A held judgment (head turning, track briefly lost, jump candidate, history rebuilding) counts
+  /// its tau down while held. After this many seconds of pause it is DROPPED to "no judgment" and
+  /// must be rebuilt from fresh sightings: no warnings about something we can't currently judge.
+  ///
+  /// STATUS: GUESS (2 s, chosen 2026-11-14).
+  static let maxPause = 2.0
 }

@@ -157,14 +157,19 @@ final class RiskEstimatorTests: XCTestCase {
     XCTAssertTrue(steps.compactMap(\.only).allSatisfy { $0.state == .tooNew && $0.level == 0 })
   }
 
-  func testCoastingTrackHoldsItsLevel() {
-    // Person at level 2 disappears (occluded): the level is held while the track coasts.
+  func testCoastingTrackHoldsItsJudgmentWithTauCountingDown() {
+    // Person at level 2 disappears (occluded): the judgment is held while the track coasts, and
+    // its tau counts down by the time passed (the object is assumed to keep its speed).
     let steps = run(duration: 8.8) { t in t < 7.5 ? Scenario.walksToward.detections(at: t) : [] }
-    let before = steps.last { $0.time < 7.5 }!.only!
+    let beforeStep = steps.last { $0.time < 7.5 }!
+    let before = beforeStep.only!
     XCTAssertGreaterThanOrEqual(before.level, 2)
-    let coasting = steps.first { $0.time > 8.0 }!
-    XCTAssertEqual(coasting.only?.level, before.level)
-    XCTAssertEqual(coasting.only?.held, true)
+    let coastingStep = steps.first { $0.time > 8.0 }!
+    let coasting = coastingStep.only!
+    XCTAssertEqual(coasting.held, true)
+    XCTAssertEqual(coasting.state, .onCourse)
+    XCTAssertEqual(coasting.tau!, max(0.05, before.tau! - (coastingStep.time - beforeStep.time)), accuracy: 1e-6)
+    XCTAssertGreaterThanOrEqual(coasting.level, before.level)
     // Gone after the 1 s coast.
     XCTAssertTrue(steps.last!.frame.assessments.isEmpty)
   }
@@ -285,5 +290,79 @@ final class RiskEstimatorTests: XCTestCase {
     XCTAssertTrue(steps.compactMap(\.only).allSatisfy { !$0.distanceReliable })
     XCTAssertFalse(steps.compactMap(\.only).contains { $0.state == .walkingInto })
     XCTAssertGreaterThan(steps.map(\.maxLevel).max() ?? 0, 0)
+  }
+
+  // MARK: - Pauses, cut-off hold, jumps
+
+  // Head scanning side to side for 2.6 s: judgment held (counting down) for the first 2 s, then
+  // dropped to none; after the scan it is rebuilt from fresh sightings only.
+  // (A car, so the box is wide enough for the tracker to keep its ID through the scan.)
+  func testLongPauseDropsJudgmentThenRebuilds() {
+    let scanStart = 2.0, scanEnd = 4.6
+    // Triangle wave: 0.7 units/s (above the 0.5 unstable threshold), ±0.2.
+    func offset(_ t: Double) -> Double {
+      guard t > scanStart && t < scanEnd else { return 0 }
+      let period = 4 * 0.2 / 0.7, phase = (t - scanStart).truncatingRemainder(dividingBy: period) / period
+      return phase < 0.25 ? 0.8 * phase : phase < 0.75 ? 0.4 - 0.8 * phase : 0.8 * phase - 0.8
+    }
+    let steps = run(duration: 6.5, shift: offset) { t in
+      let z = 20 - 2 * t, h = 0.6 * 1.5 / z, w = 2.5 * h, c = offset(t)
+      return [Detection(objectClass: .car, confidence: 0.9, left: c - w / 2, right: c + w / 2,
+                        top: 0.5 - h / 2, bottom: 0.5 + h / 2)]
+    }
+    XCTAssertTrue(steps.allSatisfy { $0.frame.assessments.count == 1 }, "one track throughout")
+    let before = steps.last { $0.time < scanStart }!.only!
+    XCTAssertEqual(before.state, .onCourse)
+    let early = steps.filter { $0.time > scanStart + 0.1 && $0.time < scanStart + 1.9 }
+    XCTAssertFalse(early.isEmpty)
+    for step in early {
+      XCTAssertTrue(step.frame.unstable, "t=\(step.time)")
+      XCTAssertEqual(step.only?.held, true)
+      XCTAssertEqual(step.only?.state, .onCourse, "t=\(step.time)")
+    }
+    // Counting down while held.
+    XCTAssertLessThan(early.last!.only!.tau!, early.first!.only!.tau! - 1.5)
+    let late = steps.filter { $0.time > scanStart + 2.1 && $0.time < scanEnd }
+    XCTAssertFalse(late.isEmpty)
+    for step in late {
+      XCTAssertEqual(step.only?.state, .tooNew, "dropped, t=\(step.time)")
+      XCTAssertEqual(step.only?.level, 0)
+    }
+    // Rebuilt after the scan settles, from fresh sightings.
+    XCTAssertEqual(steps.last!.only?.state, .onCourse)
+    XCTAssertEqual(steps.last!.only?.held, false)
+  }
+
+  // Walking at the camera until the box fills the frame at ~2.5 m. From then on the box is cut off
+  // and stops growing (worst case: tau reads "not approaching"). The level never goes down while cut off.
+  func testCutOffBoxLevelCannotGoDown() {
+    func h(_ t: Double) -> Double { 2.5 / (6.5 - 1.4 * t) }
+    let steps = run(duration: 4.1) { t in
+      let cut = h(t) >= 1, height = min(1, h(t)), w = 0.5 * height
+      return [Detection(objectClass: .person, confidence: 0.9, left: -w / 2, right: w / 2,
+                        top: cut ? 0 : 0.5 - height / 2, bottom: cut ? 1 : 0.5 + height / 2)]
+    }
+    guard let firstCut = steps.firstIndex(where: { h($0.time) >= 1 }) else { return XCTFail("never cut off") }
+    let levelBefore = steps[firstCut - 1].only!.level
+    XCTAssertGreaterThanOrEqual(levelBefore, 2)
+    for step in steps[firstCut...] {
+      XCTAssertGreaterThanOrEqual(step.only!.level, levelBefore, "t=\(step.time)")
+    }
+    XCTAssertTrue(steps[firstCut...].contains { $0.only!.cutOffHold }, "the hold should have been needed")
+  }
+
+  // A standing person ahead (not growing) merges with someone into a 1.4× box that stays:
+  // no false alarm (old and new sizes never mix) and no blind spot (judgment held, never blank).
+  func testLastingMergeCausesNoFalseAlarmOrBlindSpot() {
+    let steps = run(duration: 4) { t in
+      let scale = t >= 2 ? 1.4 : 1.0
+      let h = 0.6 * 1.7 / 5 * scale, w = 0.5 * h
+      return [Detection(objectClass: .person, confidence: 0.9, left: -w / 2, right: w / 2,
+                        top: 0.5 - h / 2, bottom: 0.5 + h / 2)]
+    }
+    XCTAssertEqual(steps.map(\.maxLevel).max(), 0)
+    let firstJudged = steps.firstIndex { $0.only?.state != .tooNew }!
+    XCTAssertTrue(steps[firstJudged...].allSatisfy { $0.only?.state != .tooNew }, "no blank judgment after the merge")
+    XCTAssertTrue(steps.contains { $0.only?.held == true && $0.time >= 2 }, "held during the check")
   }
 }

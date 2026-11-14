@@ -12,6 +12,16 @@ struct TrackObservation: Equatable, Sendable {
   var centerX: Double { (left + right) / 2 }
   var height: Double { bottom - top }
   var area: Double { max(0, right - left) * max(0, bottom - top) }
+  /// Box size used for looming: √area.
+  var size: Double { area.squareRoot() }
+
+  /// True when the box touches any frame edge (x −1/+1, y 0/1), within
+  /// `MeasuredConstants.cutOffMargin` (frame heights; doubled for x, which spans 2 units).
+  /// A cut-off box is part of the object only, so its size and edges are not the real ones.
+  var touchesFrameEdge: Bool {
+    let m = MeasuredConstants.cutOffMargin
+    return left <= -1 + 2 * m || right >= 1 - 2 * m || top <= m || bottom >= 1 - m
+  }
 }
 
 /// An object followed across frames under one stable ID.
@@ -33,6 +43,17 @@ struct Track: Equatable, Sendable, Identifiable {
   /// Number of real sightings since the track began.
   var hits: Int
 
+  /// Kalman filter on box size, used ONLY to flag suspicious jumps (see `SizeFilter`).
+  var sizeFilter: SizeFilter?
+  /// Suspicious jump: sightings that broke from the size trend (a merge, someone stepping in front,
+  /// a glitch) are collected here, NEXT TO the main history, instead of in `observations`.
+  /// If the jump lasts `MeasuredConstants.jumpAcceptFrames` frames it is accepted and this history
+  /// replaces the old one; if the box returns to the trend first, it is thrown away.
+  var candidate: [TrackObservation] = []
+  var candidateFilter: SizeFilter?
+  /// True while a suspicious jump is being checked. Risk holds the old judgment meanwhile.
+  var hasCandidate: Bool { !candidate.isEmpty }
+
   // Edge velocities in normalized units per second, used only for coasting and matching.
   var vLeft = 0.0
   var vRight = 0.0
@@ -40,6 +61,10 @@ struct Track: Equatable, Sendable, Identifiable {
   var vBottom = 0.0
 
   var centerX: Double { (left + right) / 2 }
+  /// True when the current box touches any frame edge (see `TrackObservation.touchesFrameEdge`).
+  var touchesFrameEdge: Bool {
+    TrackObservation(time: lastSeen, left: left, right: right, top: top, bottom: bottom).touchesFrameEdge
+  }
   /// Seconds of history covered by the stored sightings.
   var historySpan: Double {
     guard let first = observations.first, let last = observations.last else { return 0 }
@@ -129,7 +154,8 @@ struct Tracker: Sendable {
         Track(
           id: nextID, objectClass: d.objectClass, confidence: d.confidence, observations: [obs],
           left: d.left, right: d.right, top: d.top, bottom: d.bottom,
-          lastSeen: time, isCoasting: false, hits: 1))
+          lastSeen: time, isCoasting: false, hits: 1,
+          sizeFilter: SizeFilter(size: obs.size, time: time)))
       nextID += 1
     }
     return tracks
@@ -137,15 +163,47 @@ struct Tracker: Sendable {
 
   private mutating func apply(_ d: Detection, to index: Int, at time: Double) {
     var track = tracks[index]
-    if let last = track.observations.last, time > last.time {
-      let gap = time - last.time
-      // Smooth the velocity a little so one jittery box doesn't send a coasting track flying.
-      let blend = track.hits > 1 ? 0.5 : 1.0
-      track.vLeft += blend * ((d.left - last.left) / gap - track.vLeft)
-      track.vRight += blend * ((d.right - last.right) / gap - track.vRight)
-      track.vTop += blend * ((d.top - last.top) / gap - track.vTop)
-      track.vBottom += blend * ((d.bottom - last.bottom) / gap - track.vBottom)
+    let obs = TrackObservation(time: time, left: d.left, right: d.right, top: d.top, bottom: d.bottom)
+
+    if Self.isSuspiciousJump(obs, for: track) {
+      // Break from the trend: collect it in the candidate history, keep the main one clean.
+      if let filter = track.candidateFilter, !filter.isSurprising(size: obs.size, at: time) {
+        track.candidate.append(obs)
+        track.candidateFilter?.update(size: obs.size, at: time)
+      } else {
+        // First suspicious frame, or a new jump inside the candidate: start the candidate here.
+        track.candidate = [obs]
+        track.candidateFilter = SizeFilter(size: obs.size, time: time)
+      }
+      if track.candidate.count >= MeasuredConstants.jumpAcceptFrames {
+        // The jump lasted: accept it as real. Old and new sizes never mix in one history.
+        track.observations = track.candidate
+        track.sizeFilter = track.candidateFilter
+        track.candidate = []
+        track.candidateFilter = nil
+      }
+    } else {
+      if let last = track.observations.last, time > last.time {
+        let gap = time - last.time
+        // Smooth the velocity a little so one jittery box doesn't send a coasting track flying.
+        let blend = track.hits > 1 ? 0.5 : 1.0
+        track.vLeft += blend * ((d.left - last.left) / gap - track.vLeft)
+        track.vRight += blend * ((d.right - last.right) / gap - track.vRight)
+        track.vTop += blend * ((d.top - last.top) / gap - track.vTop)
+        track.vBottom += blend * ((d.bottom - last.bottom) / gap - track.vBottom)
+      }
+      // Back on the trend: any candidate was a short glitch, throw it away.
+      track.candidate = []
+      track.candidateFilter = nil
+      if track.sizeFilter == nil {
+        track.sizeFilter = SizeFilter(size: obs.size, time: time)
+      } else {
+        track.sizeFilter?.update(size: obs.size, at: time)
+      }
+      track.observations.append(obs)
     }
+
+    // The box itself always follows the detection, so matching keeps working through a jump.
     track.left = d.left
     track.right = d.right
     track.top = d.top
@@ -155,10 +213,17 @@ struct Tracker: Sendable {
     track.lastSeen = time
     track.isCoasting = false
     track.hits += 1
-    track.observations.append(
-      TrackObservation(time: time, left: d.left, right: d.right, top: d.top, bottom: d.bottom))
     track.observations.removeAll { time - $0.time > config.historyWindow }
+    track.candidate.removeAll { time - $0.time > config.historyWindow }
     tracks[index] = track
+  }
+
+  /// A sighting is a suspicious jump when its size breaks from the track's size trend by more
+  /// than noise can explain. Boxes cut off by the frame are never flagged: their size is known to
+  /// be wrong (the risk step holds their level instead).
+  static func isSuspiciousJump(_ obs: TrackObservation, for track: Track) -> Bool {
+    guard !obs.touchesFrameEdge, let filter = track.sizeFilter else { return false }
+    return filter.isSurprising(size: obs.size, at: obs.time)
   }
 
   static func iou(

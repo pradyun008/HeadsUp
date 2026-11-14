@@ -72,6 +72,14 @@ Entry template:
 - Date: 2026-11-14 · Status: Proposed
 - Note: the handoff PDF adds a Kalman filter on ln(size) and its rate. Also check ID swaps in crowds.
 - Affects: `HeadsUp/Core/Tracker.swift`.
+- Update 2026-11-14 (Pradyun, implemented): Kalman used ONLY to flag suspicious jumps, not to replace the tau fit. Filters 1 ÷ box size (falls in a straight line at steady speed, so a fast real approach is predicted, not flagged). See D-27.
+
+### D-27 · Suspicious jumps: candidate history next to the main one
+- Date: 2026-11-14 · Status: Decided + implemented · By: Pradyun
+- Decision: a box whose size breaks from the Kalman trend (beyond 3σ; grows OR shrinks) is left out of the tau fit and collected in a separate candidate history. If the jump lasts 3 frames, the candidate replaces the old history; if the box returns to the trend first, the candidate is thrown away. Meanwhile the old judgment is held (tau counting down) until the candidate has enough history (0.4 s). Boxes cut off by the frame are never flagged (D-25 handles them).
+- Why: "even someone sprinting can't suddenly expand in frame." Keeping both histories avoids the false alarm from mixing pre- and post-merge sizes, and avoids the blind spot of starting from nothing.
+- Known limits: settings are guesses (`MeasuredConstants.sizeJitter`, `sizeRateNoise`, `jumpGate`, `jumpAcceptFrames`); doesn't fix ID swaps.
+- Affects: `SizeFilter.swift` (new), `Tracker.swift`, `RiskEstimator.swift`.
 
 ## 2 · Predict (RiskEstimator)
 
@@ -142,6 +150,7 @@ Entry template:
 - Why: Speech can say one thing at a time. Today ties at the same level go to the newest object.
 - Open: exact score (tau only, or class danger × its speed ÷ tau).
 - Affects: `HeadsUp/Core/AlertPolicy.swift`.
+- Update 2026-11-14 (Pradyun, implemented): score = tau only. Lowest tau wins; tie → predicted centre nearest the middle. `AlertState.topTrackID` = top object (debug screen: thick outline + "TOP"); speech cues come out in that order. `SpeechQueue` rules unchanged (speech is undecided, D-29). Levels stay for the band; tau is for ranking.
 
 ## 4 · Output (Speech, band, haptics)
 
@@ -160,6 +169,31 @@ Entry template:
 - Decision: `HeadsUp/Core/MeasuredConstants.swift` lists every number and logic assumption "Is it moving?" relies on, each marked PLACEHOLDER / GUESS / MEASURED with how to test it, so they can be measured later.
 - Why: know exactly what we're guessing and improve accuracy one item at a time.
 - Tradeoff: values there need an app rebuild to change (unlike Settings).
+
+### D-25 · Cut-off boxes: level can't go down
+- Date: 2026-11-14 · Status: Decided + implemented · By: Pradyun
+- Decision: while a box touches any frame edge, its level can't go down (not even to "walking into").
+- Why: a cut-off box stops growing, so tau reads too late exactly when the object is closest.
+- Affects: `RiskEstimator.swift` (`cutOffHold`), `Tracker.swift` (`touchesFrameEdge`).
+
+### D-26 · Paused judgment counts down, dropped after 2 s
+- Date: 2026-11-14 · Status: Decided + implemented · By: Pradyun
+- Decision: while a judgment is held (fast head turn, track coasting, jump candidate, history rebuilding), tau counts down by the time passed, so an on-course level can rise. After 2 s of pause (`MeasuredConstants.maxPause`) the judgment is dropped to none and rebuilt from fresh sightings only.
+- Why: "we don't want to make warnings based on tracking something not there."
+- Conflict noted: `CLAUDE.md` test 6 says head-turn levels are "held and not raised". Team chose countdown everywhere; passing objects still can't be raised (only on-course levels count down), and test 6 still passes.
+- Affects: `RiskEstimator.swift`.
+
+### D-28 · "Not watching" band signal
+- Date: 2026-11-14 · Status: Open
+- Idea: a custom band signal when judgment is paused/dropped. Must be a STATUS ("not watching right now"), never "look forward" (rule 1). Needs a firmware change (a value or byte beyond `[left, right]`).
+
+### D-29 · Keep speech?
+- Date: 2026-11-14 · Status: Open
+- Note: Pradyun raised dropping speech; undecided. Speech code untouched.
+
+### D-30 · Tracker double-counts head turns in its prediction
+- Date: 2026-11-14 · Status: Open (found, not fixed)
+- Note: `Tracker` learns edge velocities from raw image motion (which already includes the head-turn shift), then predicts with velocity + frame shift, so during a fast head turn it moves boxes about twice as far as they really went. Small, far boxes can lose their ID mid-turn. Fix: subtract the frame shift when learning velocities.
 
 ### D-24 · Cut-off boxes use the last reliable distance
 - Date: 2026-11-14 · Status: Decided + implemented · By: Pradyun

@@ -25,8 +25,12 @@ struct AlertState: Equatable, Sendable {
   var leftLevel = 0
   /// 0–3. Driven by hazards on the camera-right, and by hazards ahead.
   var rightLevel = 0
-  /// Cues to speak this frame, highest priority first. Usually empty.
+  /// Cues to speak this frame, most urgent first (see `topTrackID`). Usually empty.
   var cues: [SpeechCue] = []
+  /// Priority: the most urgent object with a non-zero level. Lowest tau (soonest contact) wins;
+  /// a tie goes to the one whose predicted centre is nearest the middle (most directly at the
+  /// wearer). The band doesn't need this (each side shows its max); it orders speech and the debug view.
+  var topTrackID: Int?
   /// Smoothed level per track, for display.
   var trackLevels: [Int: Int] = [:]
 }
@@ -48,6 +52,9 @@ struct AlertPolicy: Sendable {
     var lastSpoken: Double?
     var spokenLevel = 0
     var spokenSide: Side?
+    /// Latest tau estimate and predicted centre at contact, for ranking.
+    var tau: Double?
+    var center: Double?
   }
   private var entries: [Int: Entry] = [:]
 
@@ -61,6 +68,8 @@ struct AlertPolicy: Sendable {
       var entry = entries[track.id] ?? Entry(objectClass: track.objectClass)
       entry.objectClass = track.objectClass
       if assessment.state == .onCourse, let side = assessment.side { entry.side = side }
+      if let tau = assessment.tau { entry.tau = tau }
+      if let l = assessment.predictedLeft, let r = assessment.predictedRight { entry.center = (l + r) / 2 }
       step(&entry, raw: assessment.level)
       entries[track.id] = entry
     }
@@ -80,7 +89,18 @@ struct AlertPolicy: Sendable {
       if entry.side != .left { state.rightLevel = max(state.rightLevel, entry.level) }
     }
 
-    for id in entries.keys.sorted() {
+    // Rank: lowest tau first; tie → nearest the centre; then track ID so the order is stable.
+    let ranked = entries.keys.sorted { a, b in
+      let ea = entries[a]!, eb = entries[b]!
+      let ta = ea.tau ?? .infinity, tb = eb.tau ?? .infinity
+      if ta != tb { return ta < tb }
+      let ca = abs(ea.center ?? 0), cb = abs(eb.center ?? 0)
+      if ca != cb { return ca < cb }
+      return a < b
+    }
+    state.topTrackID = ranked.first { entries[$0]!.level > 0 }
+
+    for id in ranked {
       var entry = entries[id]!
       if entry.level < config.speechMinLevel {
         entry.spokenLevel = 0  // next time it reaches the speech level counts as a new event
@@ -99,7 +119,7 @@ struct AlertPolicy: Sendable {
       }
       entries[id] = entry
     }
-    state.cues.sort { $0.priority > $1.priority }
+    // Cues stay in ranking order (most urgent first). The speech queue's own rules are unchanged.
     return state
   }
 

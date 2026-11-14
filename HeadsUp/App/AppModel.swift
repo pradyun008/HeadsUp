@@ -57,6 +57,8 @@ final class AppModel {
   private(set) var detections: [Detection] = []
   private(set) var tracks: [Track] = []
   private(set) var risk = RiskFrame()
+  /// Priority: the most urgent object right now (lowest tau), from AlertPolicy.
+  private(set) var topTrackID: Int?
   /// Smoothed output levels, 0–3. "Left" and "right" are camera-relative.
   private(set) var leftLevel = 0
   private(set) var rightLevel = 0
@@ -321,6 +323,7 @@ final class AppModel {
     detections = output.detections
     tracks = output.tracks
     risk = output.risk
+    topTrackID = output.alert.topTrackID
     leftLevel = output.alert.leftLevel
     rightLevel = output.alert.rightLevel
     for cue in output.alert.cues {

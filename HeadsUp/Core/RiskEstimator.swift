@@ -32,8 +32,14 @@ struct RiskAssessment: Equatable, Sendable {
   /// Predicted box edges at contact, camera-relative −1…+1 (may run past the frame).
   var predictedLeft: Double?
   var predictedRight: Double?
-  /// True when this is the previous judgment carried over (head moving fast, or track coasting).
+  /// True when this is the previous judgment carried over (head moving fast, track coasting, a
+  /// suspicious size jump being checked, or history rebuilding after an accepted jump). While held,
+  /// tau counts down by the time passed, so an on-course level can rise. After
+  /// `MeasuredConstants.maxPause` of holding, the judgment is dropped (`.tooNew`, level 0).
   var held = false
+  /// True when the box touches a frame edge and the level was kept from going down
+  /// (a cut-off box stops growing, so tau reads too late exactly when the object is closest).
+  var cutOffHold = false
   /// Estimated FORWARD distance in metres (along where the camera points), from box height,
   /// focal length and the class's typical height. Recomputed every frame for every track,
   /// even when the judgment above is held. An estimate (roughly ±20–30%), never a measurement.
@@ -97,7 +103,9 @@ struct RiskConfig: Sendable, Equatable, Codable {
 ///    plus objects at different depths. Its real job is to PAUSE judgment during fast head turns.
 ///    Tracking is not reliable through them.
 ///  - A box cut off by the frame edge stops growing in the image, so tau is overestimated for
-///    objects that already fill the frame.
+///    objects that already fill the frame. Mitigation: while cut off, the level can't go down.
+///  - A held tau counts down assuming the object keeps its speed. If it turned away during the
+///    pause the level can rise for nothing, for at most `MeasuredConstants.maxPause`.
 struct RiskEstimator: Sendable {
   var config = RiskConfig()
 
@@ -111,6 +119,10 @@ struct RiskEstimator: Sendable {
   private var lastReliableDistance: [Int: Double] = [:]
   /// "Is it moving?": consecutive frames each track has been below the moving cutoff.
   private var framesBelowCutoff: [Int: Int] = [:]
+  /// When each track's current hold (pause) began.
+  private var pauseStart: [Int: Double] = [:]
+  /// After a dropped judgment: only sightings after this time count toward the rebuilt one.
+  private var freshSince: [Int: Double] = [:]
 
   mutating func reset() {
     previous = [:]
@@ -120,6 +132,8 @@ struct RiskEstimator: Sendable {
     lastUnstable = nil
     lastReliableDistance = [:]
     framesBelowCutoff = [:]
+    pauseStart = [:]
+    freshSince = [:]
   }
 
   /// - Parameters:
@@ -144,14 +158,38 @@ struct RiskEstimator: Sendable {
     frame.wearer = wearer
     var current: [Int: RiskAssessment] = [:]
     for track in tracks {
+      let id = track.id
+      let prior = previous[id]
+      // Pause: head turning fast, track coasting, or a suspicious size jump being checked.
+      let paused = unstable || track.isCoasting || track.hasCandidate
+      let fresh = paused ? nil : assess(track, now: time, since: freshSince[id])
+      // Rebuilding: it had a judgment, but its history is too short right now (an accepted jump
+      // replaced it, or a gap thinned it). Hold the old judgment instead of going blank.
+      let rebuilding = fresh?.state == .tooNew && prior.map { $0.state != .tooNew } == true
+
       var assessment: RiskAssessment
-      if unstable || track.isCoasting {
-        // Hold: keep the last judgment as it was (including "Is it moving?").
-        // A track with no judgment yet stays at none.
-        assessment = previous[track.id] ?? RiskAssessment(trackID: track.id, state: .tooNew, level: 0)
+      if paused || rebuilding {
+        let start = pauseStart[id] ?? time
+        pauseStart[id] = start
+        if time - start >= MeasuredConstants.maxPause {
+          // Paused too long: drop the judgment. No warnings about something we can't judge now;
+          // it is rebuilt from sightings after this moment.
+          assessment = RiskAssessment(trackID: id, state: .tooNew, level: 0)
+          freshSince[id] = time
+          framesBelowCutoff[id] = 0
+        } else {
+          // Hold the last judgment (including "Is it moving?"), with tau counting down by the time
+          // passed, assuming the object keeps its speed. Only on-course levels follow the countdown,
+          // so a hold never turns a passing object into a hazard. No judgment yet stays at none.
+          assessment = prior ?? RiskAssessment(trackID: id, state: .tooNew, level: 0)
+          if let tau = assessment.tau { assessment.tau = max(0.05, tau - dt) }
+          if assessment.state == .onCourse, let tau = assessment.tau { assessment.level = level(forTau: tau) }
+        }
         assessment.held = true
+        assessment.cutOffHold = false
       } else {
-        assessment = assess(track, now: time)
+        pauseStart[id] = nil
+        assessment = fresh!
       }
       // Distance for every track, every frame (also when the judgment is held), from its current box.
       if let estimate = Self.distance(objectClass: track.objectClass, top: track.top, bottom: track.bottom) {
@@ -168,6 +206,19 @@ struct RiskEstimator: Sendable {
       if !assessment.held && assessment.state == .onCourse {
         isItMoving(&assessment, wearer: wearer)
       }
+      // Cut-off hold: while the box touches a frame edge, its level can't go down (not even to
+      // "walking into"): the box can't grow past the edge, so tau reads too late when it's closest.
+      if !assessment.held, track.touchesFrameEdge, let prior, prior.level > assessment.level {
+        assessment.level = prior.level
+        assessment.state = prior.state
+        assessment.side = prior.side
+        if assessment.tau == nil { assessment.tau = prior.tau }
+        if assessment.predictedLeft == nil {
+          assessment.predictedLeft = prior.predictedLeft
+          assessment.predictedRight = prior.predictedRight
+        }
+        assessment.cutOffHold = true
+      }
       current[track.id] = assessment
       frame.assessments.append(assessment)
     }
@@ -176,6 +227,8 @@ struct RiskEstimator: Sendable {
     let ids = Set(tracks.map(\.id))
     lastReliableDistance = lastReliableDistance.filter { ids.contains($0.key) }
     framesBelowCutoff = framesBelowCutoff.filter { ids.contains($0.key) }
+    pauseStart = pauseStart.filter { ids.contains($0.key) }
+    freshSince = freshSince.filter { ids.contains($0.key) }
     return frame
   }
 
@@ -221,9 +274,10 @@ struct RiskEstimator: Sendable {
     }
   }
 
-  private func assess(_ track: Track, now: Double) -> RiskAssessment {
-    let obs = track.observations
-    let span = track.historySpan
+  /// - Parameter since: only sightings after this time count (after a dropped judgment).
+  private func assess(_ track: Track, now: Double, since: Double? = nil) -> RiskAssessment {
+    let obs = since.map { cut in track.observations.filter { $0.time > cut } } ?? track.observations
+    let span = (obs.last?.time ?? 0) - (obs.first?.time ?? 0)
     guard obs.count >= 4, span >= config.minHistory - 1e-6 else {
       return RiskAssessment(trackID: track.id, state: .tooNew, level: 0)
     }
