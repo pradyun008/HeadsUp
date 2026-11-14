@@ -54,6 +54,8 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>The phone camera can stand in for the glasses camera.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Your position is used to speak walking directions.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Lets your phone find and connect to your glasses over Wi-Fi.</string>
 	<key>UIBackgroundModes</key>

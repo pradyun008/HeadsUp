@@ -59,6 +59,7 @@ targets:
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         NSCameraUsageDescription: The phone camera can stand in for the glasses camera.
+        NSLocationWhenInUseUsageDescription: Your position is used to speak walking directions.
     dependencies:
       - package: MetaWearablesDAT
         product: MWDATCore
