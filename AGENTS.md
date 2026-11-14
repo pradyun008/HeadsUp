@@ -321,3 +321,19 @@ This workflow does not itself authorize publishing, merging,
 deployment, purchases, deletion of unrelated data, or changes
 to access permissions. Follow the user's actual authorization
 and the environment's approval requirements.
+
+# HeadsUp implementation
+
+Read `docs/DESIGN.md` before development. It is the implementation specification.
+Follow section 18 milestones M0–M10 strictly in order; do not start the next
+milestone until the previous milestone's done-when test passes. Record actual
+checks and measurements in `docs/TEST_RESULTS.md`. Never claim a hardware test
+passed based on compilation or simulation alone.
+
+Preserve section 4 safety invariants S1–S8. Keep the reflex path offline and
+independent of optional components. Record unspecified implementation choices
+in `docs/DECISIONS.md` per section 0.3. Optional components wait until M6 passes.
+
+Stay on the `Eric` branch. Commit and push after each completed milestone with
+a relevant message. Clearly label any incomplete checkpoint; never mark a
+milestone complete while its acceptance checks remain unmet.

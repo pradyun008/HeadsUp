@@ -1,0 +1,14 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+*.xcuserstate
+xcuserdata/
+DerivedData/
+.build/
+build/
+ios/*.xcodeproj/
+__pycache__/
+*.pyc
+.aws-sam/
+ios/Local.xcconfig

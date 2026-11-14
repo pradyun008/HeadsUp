@@ -1,0 +1,3 @@
+// Copy to Local.xcconfig and fill in your Apple development team.
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+HEADSUP_BUNDLE_IDENTIFIER = org.headsup.HeadsUp
