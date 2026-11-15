@@ -1,7 +1,7 @@
 import Foundation
 
 /// Wire protocol shared with the wristband firmware (`arduino_backend/esp_bluetooth.ino`,
-/// Vincent's branch, read 2026-11-15). The band is an ESP32 that advertises one service with one
+/// read 2026-11-15). The band is an ESP32 that advertises one service with one
 /// writable characteristic and takes one command per motor.
 enum BandConstants {
   /// The name the band advertises. The app finds it by its service, not by this name.
@@ -20,7 +20,8 @@ enum BandConstants {
   static let buzzOnTime: TimeInterval = 0.4
 
   /// Motor strength (0–255) for each level 0–3.
-  /// STATUS: GUESS. Tune on the wrist: level 1 should be clearly felt, level 3 unmistakable.
+  /// Chosen by estimate, then used in the 2026-11-15 test on the real band, which the team
+  /// reported as working. Not tuned further: level 1 should be clearly felt, level 3 unmistakable.
   static let strengthForLevel: [UInt8] = [0, 90, 160, 255]
 
   /// The firmware's command for one motor: `[side, strength, on-time in 100 ms units]`.

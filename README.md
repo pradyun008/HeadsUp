@@ -61,7 +61,7 @@ Left and right are relative to the camera, which turns with the head.
 | iPhone | All processing |
 | Wristband | ESP32 with two vibration motors, over Bluetooth Low Energy |
 
-The band firmware is `arduino_backend/esp_bluetooth.ino` on the `Vincent` branch. Every 200 ms the app sends each motor a strength and a short run time. If the app goes quiet, the motors stop by themselves within 400 ms.
+The band firmware is `arduino_backend/esp_bluetooth.ino`. To put it on a band, open it in Arduino IDE, select the Seeed XIAO ESP32-C3 board and upload over USB-C. The band advertises as "HeadsUp" and buzzes each motor once at power-up. Every 200 ms the app sends each motor a strength and a short run time. If the app goes quiet, the motors stop by themselves within 400 ms.
 
 ## Measured on our devices
 
@@ -115,6 +115,7 @@ Its keys go in `server/.env`, which is not in the repository.
 | `HeadsUp/Nav` | Voice navigation |
 | `HeadsUp/UI` | Main, Debug, Route, Settings and onboarding screens |
 | `HeadsUpTests` | Unit tests |
+| `arduino_backend` | Wristband firmware (ESP32, Arduino) |
 | `server` | Route-intel server for navigation |
 | `.plans` | Specs and the team's decision log |
 
