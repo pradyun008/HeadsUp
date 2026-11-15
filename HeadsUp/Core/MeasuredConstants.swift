@@ -101,6 +101,21 @@ enum MeasuredConstants {
   /// TEST: compare with the pace reading the debug screen shows once it arrives.
   static let defaultWalkingSpeed = 1.0
 
+  /// Walking yes/no comes from the phone's shake (see `StepDetector`), not Apple's activity label,
+  /// which took ~10 s to switch in Run A (2026-11-15).
+  /// Root-mean-square acceleration (gravity removed) above this, in g, over `stepWindow` = walking.
+  ///
+  /// STATUS: GUESS (0.05 g: standing with the phone in hand is about 0.01–0.02 g, walking 0.1 g+).
+  /// TEST: watch "Step wobble" on the Debug tab while (1) standing still with the phone in its demo
+  /// position, (2) walking slowly, (3) walking normally. Put the threshold between (1) and (2).
+  static let stepWobbleThreshold = 0.05
+
+  /// How many seconds of shake the step detector averages. Shorter reacts faster but flickers
+  /// between steps; it should cover about 3 steps.
+  ///
+  /// STATUS: GUESS (1.5 s). The walking/stationary switch takes about this long both ways.
+  static let stepWindow = 1.5
+
   /// An on-course object only switches to "walking into" (no alert) after this many frames in a
   /// row below the cutoff. It switches back to "moving" immediately. Reduces flicker without
   /// delaying real alerts.

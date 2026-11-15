@@ -59,6 +59,8 @@ final class AppModel {
   private(set) var risk = RiskFrame()
   /// Priority: the most urgent object right now (lowest tau), from AlertPolicy.
   private(set) var topTrackID: Int?
+  /// The step detector's shake in g (walking above `MeasuredConstants.stepWobbleThreshold`).
+  private(set) var stepWobble = 0.0
   /// Smoothed output levels, 0–3. "Left" and "right" are camera-relative.
   private(set) var leftLevel = 0
   private(set) var rightLevel = 0
@@ -363,6 +365,7 @@ final class AppModel {
     tracks = output.tracks
     risk = output.risk
     topTrackID = output.alert.topTrackID
+    stepWobble = motion.wobble
     leftLevel = output.alert.leftLevel
     rightLevel = output.alert.rightLevel
     // Navigation speech is held while a hazard is high or urgent, and released when it passes.

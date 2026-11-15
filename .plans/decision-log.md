@@ -220,16 +220,24 @@ Entry template:
 - Decision: during a replayed GPS walk the hazard check uses the real sensors (wearer stationary at the table). No faked wearer motion.
 - Consequence: the table demo cannot show a standing person being suppressed as "walking into".
 
+### D-34 · Walking yes/no from our own step detector, not Apple's activity label
+- Date: 2026-11-15 · Status: Decided · By: Pradyun
+- Finding: in Run A (wearer walking at a standing teammate, 17 s screen recording) the wearer line read "stationary" the whole clip; a later check showed Apple's activity label took at least ~10 s to switch to walking. Meanwhile "Is it moving?" treats everything on course as a mover, so walking into a standing person buzzed. The same lag on stopping is worse: walking speed is subtracted while standing and can hide a real mover.
+- Decision: `StepDetector` (accelerometer, root-mean-square shake over 1.5 s, walking above 0.05 g) decides walking yes/no and reacts in about 1.5 s both ways. Pedometer pace still gives the speed; the 1.0 m/s default until it arrives. Apple's label is only a fallback when the phone has no accelerometer data.
+- Debug tab shows "Step wobble" to measure the threshold (`MeasuredConstants.stepWobbleThreshold`, GUESS).
+- Known limit: shaking the phone counts as walking (shake only, no step rhythm check). A bike or car ride also shakes it.
+- Alternatives considered: pedometer step counts (still a few seconds of lag, no fix for the stop lag); demo workaround only; assuming walking when unsure (hides real movers, rejected).
+
 ## Onboarding and UI (added 2026-11-15)
 
-### D-34 · First-run onboarding: five slides, cues shown not played
+### D-35 · First-run onboarding: five slides, cues shown not played
 - Date: 2026-11-15 · Status: Proposed · By: Eric
 - Decision: a five-slide onboarding (welcome, left cue, right cue, both cues with rising intensity, ending) shown once before the tabs, specified in `headsup-onboarding-spec.md`. The ending line is "HeadsUp tells you what's around you. You decide what to do."
 - Why: a caretaker or VoiceOver user needs to learn what each cue means before the first walk. The requested ending, "We'll keep you safe for now.", was replaced because Rule 1 forbids saying anything is safe.
 - Alternatives considered: playing the real cues on the band or phone during the slides. Not now: those outputs belong to the hazard loop and the band has no BLE yet.
 - Affects: `HeadsUpApp.swift`, `OnboardingView.swift`, `WristbandIllustration.swift`.
 
-### D-35 · Main action buttons use tinted Liquid Glass
+### D-36 · Main action buttons use tinted Liquid Glass
 - Date: 2026-11-15 · Status: Proposed · By: Eric
 - Decision: the main action buttons on Main, Debug and Route use `VibrantGlassButtonStyle` (iOS 26 glass tinted with a system color; solid fallback before iOS 26 and under Reduce Transparency). Layout unchanged. Labels pick black or white per tint for contrast; measured at 5.1:1 or better in Light and Dark.
 - Why: clearer, more distinct actions, and color-coded start (green) and stop (red).

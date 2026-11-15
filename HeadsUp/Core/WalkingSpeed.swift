@@ -45,22 +45,80 @@ struct WalkingSpeedEstimator: Sendable {
   }
 }
 
-/// Feeds Apple's activity labels and pedometer pace into a `WalkingSpeedEstimator`.
-/// Needs the Motion & Fitness permission (NSMotionUsageDescription). If the phone can't provide
-/// activity or pace, the wearer simply stays `.stationary` (subtract nothing: no misses).
+/// Walking yes/no from the phone's own accelerometer, so it reacts in 1–2 s instead of the
+/// ~10 s Apple's activity label takes (measured 2026-11-15, Run A). Both directions matter:
+/// a slow "walking" → "stationary" switch is the dangerous one, because it subtracts walking
+/// speed while the wearer stands still and can hide a real mover.
+///
+/// How: each step shakes the phone (about 2 bumps a second). Standing still, the shake is near
+/// zero. `wobble` = root-mean-square of the acceleration (gravity removed, in g) over the last
+/// `MeasuredConstants.stepWindow` seconds. Above `MeasuredConstants.stepWobbleThreshold` = walking.
+/// Plain logic with no sensors, so it can be unit-tested.
+struct StepDetector: Sendable {
+  private var samples: [(time: Double, squared: Double)] = []
+  private var sum = 0.0
+  /// Root-mean-square acceleration over the window, in g. Shown on the Debug tab.
+  private(set) var wobble = 0.0
+  private(set) var isWalking = false
+
+  /// Add one sample: the size of the acceleration with gravity removed, in g.
+  /// Returns true when `isWalking` changed.
+  @discardableResult
+  mutating func add(acceleration: Double, at time: Double) -> Bool {
+    let squared = acceleration * acceleration
+    samples.append((time, squared))
+    sum += squared
+    while let first = samples.first, time - first.time > MeasuredConstants.stepWindow {
+      sum -= first.squared
+      samples.removeFirst()
+    }
+    wobble = (max(0, sum) / Double(samples.count)).squareRoot()
+    // Until the window has filled once (just started), stay stationary: subtract nothing.
+    let full = time - (samples.first?.time ?? time) >= 0.9 * MeasuredConstants.stepWindow
+    let walking = full && wobble > MeasuredConstants.stepWobbleThreshold
+    defer { isWalking = walking }
+    return walking != isWalking
+  }
+}
+
+/// Feeds the step detector (walking yes/no) and pedometer pace (walking speed) into a
+/// `WalkingSpeedEstimator`. Needs the Motion & Fitness permission (NSMotionUsageDescription).
+/// If the phone has no accelerometer data, it falls back to Apple's activity labels (slow).
+/// If neither is available the wearer stays `.stationary` (subtract nothing: no misses).
 final class MotionSource: @unchecked Sendable {
+  private let motionManager = CMMotionManager()
   private let activityManager = CMMotionActivityManager()
   private let pedometer = CMPedometer()
   private let queue = OperationQueue()
   private let lock = NSLock()
   private var estimator = WalkingSpeedEstimator()
+  private var steps = StepDetector()
 
   /// Safe to read from any thread (the pipeline reads it once per frame).
   var current: WearerMotion { lock.withLock { estimator.current } }
+  /// The step detector's current shake, in g, for the Debug tab.
+  var wobble: Double { lock.withLock { steps.wobble } }
 
   func start() {
-    lock.withLock { estimator = WalkingSpeedEstimator() }
-    if CMMotionActivityManager.isActivityAvailable() {
+    lock.withLock {
+      estimator = WalkingSpeedEstimator()
+      steps = StepDetector()
+    }
+    queue.maxConcurrentOperationCount = 1
+    if motionManager.isDeviceMotionAvailable {
+      // 50 samples a second: plenty for ~2 steps a second.
+      motionManager.deviceMotionUpdateInterval = 1.0 / 50
+      motionManager.startDeviceMotionUpdates(to: queue) { [weak self] motion, _ in
+        guard let self, let motion else { return }
+        let a = motion.userAcceleration
+        let size = (a.x * a.x + a.y * a.y + a.z * a.z).squareRoot()
+        self.lock.withLock {
+          if self.steps.add(acceleration: size, at: motion.timestamp) {
+            self.estimator.activityChanged(self.steps.isWalking ? .walking : .stationary)
+          }
+        }
+      }
+    } else if CMMotionActivityManager.isActivityAvailable() {
       activityManager.startActivityUpdates(to: queue) { [weak self] activity in
         // Low-confidence labels are ignored; the previous label stays.
         guard let self, let activity, activity.confidence != .low else { return }
@@ -84,8 +142,12 @@ final class MotionSource: @unchecked Sendable {
   }
 
   func stop() {
+    motionManager.stopDeviceMotionUpdates()
     activityManager.stopActivityUpdates()
     pedometer.stopUpdates()
-    lock.withLock { estimator = WalkingSpeedEstimator() }
+    lock.withLock {
+      estimator = WalkingSpeedEstimator()
+      steps = StepDetector()
+    }
   }
 }

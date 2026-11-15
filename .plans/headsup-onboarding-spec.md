@@ -1,6 +1,6 @@
 # HeadsUp onboarding and Liquid Glass buttons
 
-Added 2026-11-15 by Eric. Decisions: D-34, D-35 in `decision-log.md`.
+Added 2026-11-15 by Eric. Decisions: D-35, D-36 in `decision-log.md`.
 Figma (Apple iOS 26 UI kit): https://www.figma.com/design/ouFti7poA50NCeBu3PjnW3/iOS-and-iPadOS-26--Community-?node-id=8417-2
 
 ## What it is
