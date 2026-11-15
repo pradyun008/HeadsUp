@@ -11,3 +11,4 @@ xcuserdata/
 .env
 server/.env
 server/cache/
+__pycache__/
