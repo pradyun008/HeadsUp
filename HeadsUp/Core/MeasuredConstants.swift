@@ -107,13 +107,16 @@ enum MeasuredConstants {
   /// above `stepWobbleStart` → walking; back to stationary only below `stepWobbleStop`.
   /// The gap between the two stops the label flipping when the shake hovers near one line.
   ///
-  /// STATUS: MEASURED (2026-11-15, phone held in hand while filming, Debug tab "Step wobble"):
-  ///     standing still   0.005–0.009 g
-  ///     walking          up to 0.025 g (the lowest walking value was not noted)
-  /// The first guess (0.05) was far too high: the phone held steady in a hand shakes much less
-  /// than one in a pocket. Re-measure if the phone is carried differently.
-  static let stepWobbleStart = 0.015
-  static let stepWobbleStop = 0.011
+  /// STATUS: MEASURED (2026-11-15, phone held in hand, Debug tab "Step wobble"):
+  ///     standing still   0.020–0.10 g  (read off the screen by eye; the top end is the hand moving)
+  ///     walking          0.114–0.47 g, mostly 0.12–0.25 (37 s screen recording, one reading a second)
+  /// The gap between standing and walking is narrow, so these two lines sit just under the lowest
+  /// walking value. Mistakes lean toward "stationary" on purpose: that only costs a false alarm,
+  /// while "walking" when standing can hide a real mover.
+  /// Earlier values (0.05, then 0.015/0.011) came from misread numbers; do not reuse them.
+  /// Re-measure if the phone is carried differently (pocket, lanyard).
+  static let stepWobbleStart = 0.105
+  static let stepWobbleStop = 0.09
 
   /// How many seconds of shake the step detector averages. Shorter reacts faster but flickers
   /// between steps; it should cover about 3 steps.

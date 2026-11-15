@@ -75,8 +75,8 @@ final class StepDetectorTests: XCTestCase {
   private let rate = 50.0  // samples per second, as on the phone
 
   /// Steps: about 2 bumps a second of `amplitude` g, plus small hand noise.
-  private func walkingShake(_ t: Double, amplitude: Double = 0.03) -> Double {
-    abs(amplitude * sin(2 * .pi * 1.8 * t)) + 0.005
+  private func walkingShake(_ t: Double, amplitude: Double = 0.25) -> Double {
+    abs(amplitude * sin(2 * .pi * 1.8 * t)) + 0.02
   }
 
   /// Feeds `seconds` of samples starting at `start`; returns the first time `isWalking` changed.
@@ -95,7 +95,7 @@ final class StepDetectorTests: XCTestCase {
   // Standing with the phone in hand (tiny tremor) never counts as walking.
   func testStandingStillIsNotWalking() {
     var d = StepDetector()
-    feed(&d, from: 0, seconds: 10) { t in 0.007 + 0.002 * sin(t * 7) }
+    feed(&d, from: 0, seconds: 10) { t in 0.05 + 0.03 * sin(t * 7) }
     XCTAssertFalse(d.isWalking)
     XCTAssertLessThan(d.wobble, MeasuredConstants.stepWobbleStop)
   }
@@ -103,7 +103,7 @@ final class StepDetectorTests: XCTestCase {
   // Starting to walk is caught within about one window (Apple's label took ~10 s).
   func testStartingToWalkIsCaughtWithinTwoSeconds() {
     var d = StepDetector()
-    feed(&d, from: 0, seconds: 5) { _ in 0.007 }
+    feed(&d, from: 0, seconds: 5) { _ in 0.05 }
     let switched = feed(&d, from: 5, seconds: 5) { self.walkingShake($0) }
     XCTAssertTrue(d.isWalking)
     XCTAssertNotNil(switched)
@@ -116,7 +116,7 @@ final class StepDetectorTests: XCTestCase {
     var d = StepDetector()
     feed(&d, from: 0, seconds: 5) { self.walkingShake($0) }
     XCTAssertTrue(d.isWalking)
-    let switched = feed(&d, from: 5, seconds: 5) { _ in 0.007 }
+    let switched = feed(&d, from: 5, seconds: 5) { _ in 0.05 }
     XCTAssertFalse(d.isWalking)
     XCTAssertLessThan((switched ?? 99) - 5, 2.0)
   }
@@ -133,11 +133,11 @@ final class StepDetectorTests: XCTestCase {
   // Shake hovering between the two lines keeps whatever the label was: no flipping.
   func testShakeBetweenTheLinesDoesNotFlip() {
     var d = StepDetector()
-    feed(&d, from: 0, seconds: 5) { _ in 0.013 }  // from standing: stays stationary
+    feed(&d, from: 0, seconds: 5) { _ in 0.098 }  // from standing: stays stationary
     XCTAssertFalse(d.isWalking)
     feed(&d, from: 5, seconds: 5) { self.walkingShake($0) }
     XCTAssertTrue(d.isWalking)
-    let flipped = feed(&d, from: 10, seconds: 5) { _ in 0.013 }  // from walking: stays walking
+    let flipped = feed(&d, from: 10, seconds: 5) { _ in 0.098 }  // from walking: stays walking
     XCTAssertNil(flipped)
     XCTAssertTrue(d.isWalking)
   }
