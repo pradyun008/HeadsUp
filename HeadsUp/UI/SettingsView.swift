@@ -18,7 +18,7 @@ struct SettingsView: View {
           }
           .pickerStyle(.segmented)
           .accessibilityLabel("Haptics output")
-          Text("Band is simulated on screen in this build (no Bluetooth yet). Phone vibration: one pulse is the left cue, two pulses the right cue, a long buzz is ahead. It repeats faster as the level rises.")
+          Text("The band connects over Bluetooth by itself when it is switched on; the Debug tab shows its state. Phone vibration: one pulse is the left cue, two pulses the right cue, a long buzz is ahead. It repeats faster as the level rises.")
             .font(.footnote).foregroundStyle(.secondary)
           if !model.phoneHapticsSupported {
             Text("This device has no vibration motor, so Phone does nothing here.")

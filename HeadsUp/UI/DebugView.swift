@@ -40,8 +40,8 @@ struct DebugView: View {
         }
         Text(
           String(
-            format: "Simulated band: bytes [%d, %d] · %.0f writes/s",
-            model.bandPacket[0], model.bandPacket[1], model.bandWriteRate)
+            format: "%@ · levels [%d, %d] · %.0f writes/s",
+            model.bandStatus, model.bandPacket[0], model.bandPacket[1], model.bandWriteRate)
         )
         .font(.callout.monospacedDigit())
         if let message = model.detectorMessage {

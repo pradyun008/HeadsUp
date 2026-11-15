@@ -1,16 +1,18 @@
 import Foundation
 import QuartzCore
 
-/// Where band packets go. The real one will be Core Bluetooth (write-without-response);
-/// this build only has the simulated one.
+/// Where band packets go: the real band over Bluetooth (`BluetoothBand`), the on-screen
+/// simulated one, or both (`BandFanout`).
 protocol BandTransport: AnyObject, Sendable {
-  /// Sends one 2-byte packet: `[first motor level, second motor level]`, each 0–3.
+  /// Takes one level packet: `[first motor level, second motor level]`, each 0–3.
+  /// The transport turns it into whatever the band firmware wants (see `BandConstants`).
   func write(_ packet: [UInt8])
 }
 
 /// Drives the two-motor wristband: sends `[leftLevel, rightLevel]` every 200 ms as a heartbeat
-/// (the firmware switches the motors off if it hears nothing for 600 ms), and at once when a
-/// level changes so a new hazard is not delayed by up to a heartbeat.
+/// (each command only runs a motor for `BandConstants.buzzOnTime`, so the motors stop by
+/// themselves if the app goes quiet), and at once when a level changes so a new hazard is not
+/// delayed by up to a heartbeat.
 ///
 /// The two motors are two learned cues ("left cue", "right cue"), not literal directions:
 /// inner and outer wrist do not stay left and right as the arm rotates. `swapChannels` is the
@@ -83,8 +85,8 @@ final class BandOutput: @unchecked Sendable {
   }
 }
 
-/// Stands in for the wristband: remembers what was written and applies the firmware's
-/// 600 ms silence timeout, so the screen can show what the motors would be doing.
+/// Stands in for the wristband: remembers what was written and switches off once the last
+/// command's on-time has run out, so the screen can show what the motors would be doing.
 final class SimulatedBand: BandTransport, @unchecked Sendable {
   private let lock = NSLock()
   private var lastPacket: [UInt8] = [0, 0]
@@ -107,10 +109,10 @@ final class SimulatedBand: BandTransport, @unchecked Sendable {
     onWrite?(packet, now)
   }
 
-  /// What the two motors are doing at `now`: the last packet, or off after 600 ms of silence.
+  /// What the two motors are doing at `now`: the last packet, or off once its on-time is over.
   func motors(at now: CFTimeInterval = CACurrentMediaTime()) -> [UInt8] {
     lock.withLock {
-      guard let lastWrite, now - lastWrite <= BandConstants.firmwareTimeout else { return [0, 0] }
+      guard let lastWrite, now - lastWrite <= BandConstants.buzzOnTime else { return [0, 0] }
       return lastPacket
     }
   }

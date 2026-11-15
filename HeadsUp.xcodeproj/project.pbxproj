@@ -72,6 +72,7 @@
 		31DBB7F812EFE2C78D7F83E4 /* GlassButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898C923FE7E62694C9D43952 /* GlassButtonStyle.swift */; };
 		EC93070FB858B852EA50153C /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D58C145AEDE62276ED4B65 /* OnboardingView.swift */; };
 		044A3B3B9C5403CD9083AB10 /* WristbandIllustration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760F4F3B7BE9F83E58094897 /* WristbandIllustration.swift */; };
+		0B9FCE51E52BB96BE338BAC1 /* BluetoothBand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C0AD51833719AFED30BEB09 /* BluetoothBand.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -150,6 +151,7 @@
 		898C923FE7E62694C9D43952 /* GlassButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButtonStyle.swift; sourceTree = "<group>"; };
 		D1D58C145AEDE62276ED4B65 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		760F4F3B7BE9F83E58094897 /* WristbandIllustration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WristbandIllustration.swift; sourceTree = "<group>"; };
+		7C0AD51833719AFED30BEB09 /* BluetoothBand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothBand.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -262,6 +264,7 @@
 			children = (
 				6E1C7DCA2A5C84A195B53696 /* BandConstants.swift */,
 				C4EE5E23F98237D1E1D62F2B /* BandOutput.swift */,
+				7C0AD51833719AFED30BEB09 /* BluetoothBand.swift */,
 				1C938C348365D581F8C65854 /* PhoneHapticOutput.swift */,
 				A21CB7E263597F445BF1CBFA /* SpeechOutput.swift */,
 			);
@@ -461,6 +464,7 @@
 				DFAE8C6A1A495B7694C8197E /* AppModel.swift in Sources */,
 				9A69BD61C27400945757ED89 /* BandConstants.swift in Sources */,
 				857741760396CAB98A86B23B /* BandOutput.swift in Sources */,
+				0B9FCE51E52BB96BE338BAC1 /* BluetoothBand.swift in Sources */,
 				9A20FCAD208AAFB762A1C9CD /* ClipHarness.swift in Sources */,
 				763D7A98AF436BF78D4BA442 /* CrossingScan.swift in Sources */,
 				6855D635A2201C3462479CC2 /* DebugView.swift in Sources */,

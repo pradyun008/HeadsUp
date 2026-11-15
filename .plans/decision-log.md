@@ -234,3 +234,10 @@ Entry template:
 - Decision: `MeasuredConstants.movingCutoff = 0.5`.
 - Risk: a standing person whose "own" reading spikes above 0.5 for 3 frames now warns. Raise toward 0.6 if that shows up.
 - Also changed (same day): the default tau level thresholds, from 4 / 2.5 / 1.5 s to 5 / 3.5 / 2 s, to warn earlier about slow walkers (at 0.8 m/s: level 1 at about 4 m instead of 3.2 m, speech at about 2.8 m instead of 2 m). This differs from the table in `CLAUDE.md`. Settings saved on a phone override the code defaults, so set them in the app's Settings tab too. Cost: more level-1 flicker from far or standing people, and the person on course can get a second spoken cue.
+
+### D-36 · The app speaks the band firmware's protocol (not the 2-byte one in CLAUDE.md)
+- Date: 2026-11-15 · Status: Decided · By: Pradyun
+- Finding: the firmware on Vincent's branch (`arduino_backend/esp_bluetooth.ino`) advertises as "HeadsUp" with service 6E400001-… and characteristic 6E400002-…, and takes one command per motor, `[side, strength 0–255, on-time ×100 ms]`. It ignores 2-byte messages and has no silence timeout. The app had no Bluetooth code, only the simulated band.
+- Decision: change the app, not the firmware (no reflash before the deadline). New `BluetoothBand` (Core Bluetooth: scan by service, connect, write without response, rescan on disconnect). Every 200 ms the two levels become two commands with strength 0 / 90 / 160 / 255 and an on-time of 400 ms, so a steady level buzzes continuously and the motors stop within 400 ms if the app goes quiet.
+- Not built: pulsing patterns (each command restarts the firmware's timer), a spoken "band disconnected" notice, and automatic fallback to phone vibration.
+- Open: the strengths are guesses, to tune on the wrist; which physical motor is "left" (firmware pin D4) is to be checked, and fixed with the which-wrist switch if reversed.

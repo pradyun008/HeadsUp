@@ -65,8 +65,10 @@ final class AppModel {
   private(set) var leftLevel = 0
   private(set) var rightLevel = 0
   private(set) var lastCue: String?
-  /// What the (simulated) band's two motors are doing: the bytes last written to it.
+  /// The levels last sent to the band's two motors.
   private(set) var bandPacket: [UInt8] = [0, 0]
+  /// Bluetooth connection to the wristband, as text ("Band: searching", "Band: connected", ...).
+  private(set) var bandStatus = BluetoothBand.State.searching.text
   private(set) var bandWriteRate = 0.0
   /// "Which wrist": exchanges the two cues sent to the band.
   var swapBandChannels: Bool {
@@ -101,6 +103,7 @@ final class AppModel {
   @ObservationIgnored private let motion = MotionSource()
   @ObservationIgnored private let outputSwitch = OutputSwitch()
   @ObservationIgnored private let simulatedBand = SimulatedBand()
+  @ObservationIgnored private let bluetoothBand = BluetoothBand()
   @ObservationIgnored private let band: BandOutput
   /// Voice on/off.
   var speechEnabled: Bool {
@@ -150,7 +153,8 @@ final class AppModel {
     self.sourceKind = saved ?? .glasses
     self.scenarioName = scenarioSource.scenario.name
     self.swapBandChannels = UserDefaults.standard.bool(forKey: "swapBandChannels")
-    self.band = BandOutput(transport: simulatedBand)
+    // Every packet goes to the real band (if connected) and to the on-screen one.
+    self.band = BandOutput(transport: BandFanout([bluetoothBand, simulatedBand]))
     let savedOutput = UserDefaults.standard.string(forKey: "hapticsOutput").flatMap(HapticsOutput.init(rawValue:))
     let output = savedOutput ?? .band
     self.hapticsOutput = output
@@ -184,6 +188,10 @@ final class AppModel {
     simulatedBand.onWrite = { [weak self] packet, _ in
       Task { @MainActor in self?.bandWrote(packet) }
     }
+    bluetoothBand.onState = { [weak self] state in
+      Task { @MainActor in self?.bandStatus = state.text }
+    }
+    bluetoothBand.start()
     connectNavigation()
     attach(glasses, kind: .glasses)
     attach(phoneCamera, kind: .phoneCamera)
