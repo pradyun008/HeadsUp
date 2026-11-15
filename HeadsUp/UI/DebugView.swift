@@ -197,7 +197,9 @@ struct FrameOverlayView: View {
     let label = Text((d.id == topTrackID ? "TOP · " : "") + Self.label(for: d, assessment))
       .font(.caption.bold()).foregroundStyle(.white)
     let resolved = context.resolve(label)
-    let textSize = resolved.measure(in: size)
+    // Measure with the frame's width as the limit, so a long label wraps instead of running
+    // off the right edge (it used to be drawn as one line and clipped, hiding Z≈ and box h).
+    let textSize = resolved.measure(in: CGSize(width: max(1, size.width - 6), height: size.height))
     // Keep the label inside the frame even when the box is at an edge.
     let origin = CGPoint(
       x: max(0, min(rect.minX, size.width - textSize.width - 6)),
@@ -205,7 +207,7 @@ struct FrameOverlayView: View {
     context.fill(
       Path(CGRect(origin: origin, size: CGSize(width: textSize.width + 6, height: textSize.height + 2))),
       with: .color(color))
-    context.draw(resolved, at: CGPoint(x: origin.x + 3, y: origin.y + 1), anchor: .topLeading)
+    context.draw(resolved, in: CGRect(origin: CGPoint(x: origin.x + 3, y: origin.y + 1), size: textSize))
   }
 
   /// Dashed lines at ±corridor: the strip of the image the wearer is heading into (camera-relative).
@@ -236,8 +238,10 @@ struct FrameOverlayView: View {
     }
   }
 
+  /// Two lines: the judgment first, then the measurements (own speed, Z≈, box h) for the field tests.
   static func label(for track: Track, _ assessment: RiskAssessment?) -> String {
     var text = "#\(track.id) \(track.objectClass.rawValue)"
+    var measurements: [String] = []
     if let a = assessment {
       // tau is an estimate from image growth, so it is always labelled "est."
       if let tau = a.tau { text += String(format: " · est. %.1f s", tau) }
@@ -252,14 +256,14 @@ struct FrameOverlayView: View {
       // Level kept from going down because the box is cut off by the frame edge.
       if a.cutOffHold { text += " · cut off, level held" }
       // "Is it moving?": the object's own speed toward the wearer (estimate).
-      if let own = a.ownSpeed { text += String(format: " · own %.1f m/s", own) }
+      if let own = a.ownSpeed { measurements.append(String(format: "own %.1f m/s", own)) }
       // Distance is an estimate from box height; "?" marks a box cut off by the frame edge.
-      if let z = a.distance { text += String(format: " · Z≈%.1f m", z) + (a.distanceReliable ? "" : "?") }
+      if let z = a.distance { measurements.append(String(format: "Z≈%.1f m", z) + (a.distanceReliable ? "" : "?")) }
     }
     // Suspicious size jump being checked (merge, someone in front, glitch): left out of tau.
     if track.hasCandidate { text += " · jump?" }
     // Raw box height in frame heights, for the focal-length tape test.
-    text += String(format: " · box h %.3f", track.bottom - track.top)
-    return text
+    measurements.append(String(format: "box h %.3f", track.bottom - track.top))
+    return text + "\n" + measurements.joined(separator: " · ")
   }
 }
