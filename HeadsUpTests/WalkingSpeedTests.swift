@@ -69,3 +69,71 @@ final class FocalTestTests: XCTestCase {
     XCTAssertEqual(distance?.metres ?? 0, 5, accuracy: 0.01)
   }
 }
+
+/// Walking yes/no from the phone's shake: must react within about one window (1.5 s) both ways.
+final class StepDetectorTests: XCTestCase {
+  private let rate = 50.0  // samples per second, as on the phone
+
+  /// Steps: about 2 bumps a second of `amplitude` g, plus small hand noise.
+  private func walkingShake(_ t: Double, amplitude: Double = 0.15) -> Double {
+    abs(amplitude * sin(2 * .pi * 1.8 * t)) + 0.01
+  }
+
+  /// Feeds `seconds` of samples starting at `start`; returns the first time `isWalking` changed.
+  @discardableResult
+  private func feed(
+    _ d: inout StepDetector, from start: Double, seconds: Double, _ value: (Double) -> Double
+  ) -> Double? {
+    var changedAt: Double?
+    for i in 0..<Int(seconds * rate) {
+      let t = start + Double(i) / rate
+      if d.add(acceleration: value(t), at: t), changedAt == nil { changedAt = t }
+    }
+    return changedAt
+  }
+
+  // Standing with the phone in hand (tiny tremor) never counts as walking.
+  func testStandingStillIsNotWalking() {
+    var d = StepDetector()
+    feed(&d, from: 0, seconds: 10) { t in 0.015 + 0.005 * sin(t * 7) }
+    XCTAssertFalse(d.isWalking)
+    XCTAssertLessThan(d.wobble, MeasuredConstants.stepWobbleThreshold)
+  }
+
+  // Starting to walk is caught within about one window (Apple's label took ~10 s).
+  func testStartingToWalkIsCaughtWithinTwoSeconds() {
+    var d = StepDetector()
+    feed(&d, from: 0, seconds: 5) { _ in 0.015 }
+    let switched = feed(&d, from: 5, seconds: 5) { self.walkingShake($0) }
+    XCTAssertTrue(d.isWalking)
+    XCTAssertNotNil(switched)
+    XCTAssertLessThan((switched ?? 99) - 5, 2.0)
+  }
+
+  // Stopping is caught within about one window too: the dangerous direction, because walking
+  // speed subtracted while standing still can hide a real mover.
+  func testStoppingIsCaughtWithinTwoSeconds() {
+    var d = StepDetector()
+    feed(&d, from: 0, seconds: 5) { self.walkingShake($0) }
+    XCTAssertTrue(d.isWalking)
+    let switched = feed(&d, from: 5, seconds: 5) { _ in 0.015 }
+    XCTAssertFalse(d.isWalking)
+    XCTAssertLessThan((switched ?? 99) - 5, 2.0)
+  }
+
+  // No flicker between steps while walking steadily.
+  func testSteadyWalkingDoesNotFlicker() {
+    var d = StepDetector()
+    feed(&d, from: 0, seconds: 3) { self.walkingShake($0) }
+    let flicker = feed(&d, from: 3, seconds: 10) { self.walkingShake($0) }
+    XCTAssertNil(flicker)
+    XCTAssertTrue(d.isWalking)
+  }
+
+  // Just started: until the window has filled once, stay stationary even when shaking.
+  func testNoDecisionBeforeTheWindowFills() {
+    var d = StepDetector()
+    feed(&d, from: 0, seconds: 0.5) { self.walkingShake($0) }
+    XCTAssertFalse(d.isWalking)
+  }
+}

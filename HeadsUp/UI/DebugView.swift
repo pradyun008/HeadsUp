@@ -27,6 +27,13 @@ struct DebugView: View {
         legend
         // "Is it moving?" input: what the phone thinks the wearer is doing.
         Text(Self.wearerText(model.risk.wearer)).font(.callout.monospacedDigit())
+        // The step detector's input: walking when the shake is above the threshold.
+        Text(
+          String(
+            format: "Step wobble %.3f g (walking above %.3f)", model.stepWobble,
+            MeasuredConstants.stepWobbleThreshold)
+        )
+        .font(.caption.monospacedDigit())
         LevelBars(left: model.leftLevel, right: model.rightLevel)
         if let cue = model.lastCue {
           Text("Last spoken: “\(cue)”").font(.callout.bold())

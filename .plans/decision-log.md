@@ -219,3 +219,11 @@ Entry template:
 - Date: 2026-11-14 · Status: Decided · By: Roman
 - Decision: during a replayed GPS walk the hazard check uses the real sensors (wearer stationary at the table). No faked wearer motion.
 - Consequence: the table demo cannot show a standing person being suppressed as "walking into".
+
+### D-34 · Walking yes/no from our own step detector, not Apple's activity label
+- Date: 2026-11-15 · Status: Decided · By: Pradyun
+- Finding: in Run A (wearer walking at a standing teammate, 17 s screen recording) the wearer line read "stationary" the whole clip; a later check showed Apple's activity label took at least ~10 s to switch to walking. Meanwhile "Is it moving?" treats everything on course as a mover, so walking into a standing person buzzed. The same lag on stopping is worse: walking speed is subtracted while standing and can hide a real mover.
+- Decision: `StepDetector` (accelerometer, root-mean-square shake over 1.5 s, walking above 0.05 g) decides walking yes/no and reacts in about 1.5 s both ways. Pedometer pace still gives the speed; the 1.0 m/s default until it arrives. Apple's label is only a fallback when the phone has no accelerometer data.
+- Debug tab shows "Step wobble" to measure the threshold (`MeasuredConstants.stepWobbleThreshold`, GUESS).
+- Known limit: shaking the phone counts as walking (shake only, no step rhythm check). A bike or car ride also shakes it.
+- Alternatives considered: pedometer step counts (still a few seconds of lag, no fix for the stop lag); demo workaround only; assuming walking when unsure (hides real movers, rejected).
