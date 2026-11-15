@@ -67,6 +67,7 @@
 		82D13E32463E293B74009061 /* SpeechArbiterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A1C5B8B0F11BCA6CE75C86 /* SpeechArbiterTests.swift */; };
 		8E5AE3824BB089BCB344E03C /* SavedWalk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7294A92F342233AFAAC083E8 /* SavedWalk.swift */; };
 		3FF9E706105E30FCE9400B38 /* NavDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30B910AF7C0CFE18CD2662B4 /* NavDebugView.swift */; };
+		06E26798C6B297FD724FC3CF /* RouteIntelClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 171E9F4679D507BE0AFE2974 /* RouteIntelClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -140,6 +141,7 @@
 		47A1C5B8B0F11BCA6CE75C86 /* SpeechArbiterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechArbiterTests.swift; sourceTree = "<group>"; };
 		7294A92F342233AFAAC083E8 /* SavedWalk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedWalk.swift; sourceTree = "<group>"; };
 		30B910AF7C0CFE18CD2662B4 /* NavDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavDebugView.swift; sourceTree = "<group>"; };
+		171E9F4679D507BE0AFE2974 /* RouteIntelClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteIntelClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -303,6 +305,7 @@
 				D6D793E85E33147C18674114 /* NavigationEngine.swift */,
 				810F84B5AC82BF5CF22D2F2B /* NavIntent.swift */,
 				AE9EC4D0F33AD2E425964344 /* RouteGeometry.swift */,
+				171E9F4679D507BE0AFE2974 /* RouteIntelClient.swift */,
 				7294A92F342233AFAAC083E8 /* SavedWalk.swift */,
 				FDA76824DC66F0957D4C94C5 /* SpeechArbiter.swift */,
 				571AD15105B5FACD53768E6A /* VoiceCommand.swift */,
@@ -470,6 +473,7 @@
 				F2CDD64E89CCF5EF0DBDDF29 /* Pipeline.swift in Sources */,
 				782149C638D336BACFC5A034 /* RiskEstimator.swift in Sources */,
 				BB86051E9B1CA69BF2EE4527 /* RouteGeometry.swift in Sources */,
+				06E26798C6B297FD724FC3CF /* RouteIntelClient.swift in Sources */,
 				8E5AE3824BB089BCB344E03C /* SavedWalk.swift in Sources */,
 				2B282898F6D8585EA81C413B /* Scenario.swift in Sources */,
 				47AEA3838F445BB3062CEF68 /* ScenarioFrameSource.swift in Sources */,

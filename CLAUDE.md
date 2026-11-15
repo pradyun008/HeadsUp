@@ -14,12 +14,20 @@ Hackathon rule: work may begin Nov 11, 2026, locally. Keep everything in a local
 
 ## Hard rules for this project
 
-1. **Never tell the user what to do or that something is safe.** No "safe to cross", "go", "move right" or "you're clear". Output only reports what was seen: "bike, left", "car ahead". A left buzz means "hazard on your left", not "move right".
+1. **Never tell the user what to do or that something is safe.** No "safe to cross", "go", "move right" or "you're clear". Output only reports what was seen: "bike, left", "car ahead". A left buzz means "hazard on your left", not "move right". One exception, for navigation only: route cues such as "turn left" are wayfinding, and are allowed. They still never say anything is safe, and a crosswalk is mentioned only as something an aerial photo showed ("at a marked crosswalk"), never as "no crosswalk".
 2. **No cloud in the hazard loop.** Detection, tracking, risk and output all run on-device. A network round trip is too slow for something coming at you.
 3. **Don't guess Meta SDK APIs.** The Meta Wearables Device Access Toolkit (DAT) is new and changes often. Before writing glasses code, read the official iOS integration docs (wearables.developer.meta.com/docs/build-integration-ios) and Meta's CameraAccess sample app, and copy their patterns. If something in this file conflicts with the current docs, the docs win. Tell me about the conflict.
 4. **Left/right is camera-relative.** The camera follows the head, not the body. Say so in code comments and UI text.
-5. **Out of scope, do not build:** point-A-to-B navigation, emergency/caregiver calling, fall or crash detection, a conversational assistant, any "safe to cross" verdict.
-6. Ask before adding any third-party dependency beyond the Meta DAT package and a YOLO Core ML model.
+5. **Out of scope, do not build:** indoor navigation, emergency/caregiver calling, fall or crash detection, a conversational assistant, any "safe to cross" verdict.
+6. Ask before adding any third-party dependency beyond the Meta DAT package and a YOLO Core ML model. Already approved for the laptop server only (`server/`): fastapi, uvicorn, httpx.
+7. **Navigation never touches the hazard loop.** The band stays hazard-only. Hazard speech always goes before navigation speech. Network use is allowed for navigation (Apple Maps, the route-intel server) and still forbidden in the hazard loop.
+8. **CoStar organizer rule:** no floor plans, Matterport model IDs or property-identifiable geometry in the repo or README. Keys and the model ID live in the git-ignored `server/.env`.
+
+## Navigation (added Nov 14)
+
+Voice-only walking directions sit beside the hazard loop: the wearer presses the HeadsUp button, says a destination, and hears turn-by-turn cues in feet. The design is in `.plans/headsup-navigate-spec.md`; how it fits with the "Is it moving?" hazard logic is in `.plans/navigate-on-main-spec.md`; team decisions are in `.plans/decision-log.md`. Code is in `HeadsUp/Nav/`, the laptop server in `server/`.
+
+`xcodegen` is not installed on Roman's Mac. After adding Swift files, run `python3 tools/sync_xcodeproj.py` to add them to the Xcode project, and keep `project.yml` in step by hand.
 
 ## Platform
 

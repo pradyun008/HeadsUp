@@ -31,6 +31,8 @@ struct NavDebugView: View {
         replayButtons(nav)
         facts(nav)
 
+        intelSection(nav)
+
         // Hazards stay visible here, so judges see both systems at once.
         LevelBars(left: model.leftLevel, right: model.rightLevel)
         if let cue = model.lastCue {
@@ -62,6 +64,48 @@ struct NavDebugView: View {
         } ?? (nav.locationProblem ?? "no position yet"))
     }
     .font(.callout.monospacedDigit())
+  }
+
+  /// CoStar data on this route: the aerial image at each turn with any crosswalk detections,
+  /// and the destination building's description.
+  @ViewBuilder
+  private func intelSection(_ nav: NavController) -> some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Text("Route intel (Vexcel aerial images, Matterport)").font(.headline)
+      Text(nav.intelStatus).font(.callout)
+      if let intel = nav.intel {
+        if let blurb = intel.arrival?.blurb {
+          Text("On arrival: “\(blurb)”").font(.callout)
+        }
+        ScrollView(.horizontal) {
+          HStack(alignment: .top, spacing: 10) {
+            ForEach(intel.maneuvers, id: \.id) { turn in
+              VStack(alignment: .leading, spacing: 4) {
+                AerialTileView(turn: turn).frame(width: 170, height: 170)
+                Text("Turn \(turn.id + 1)").font(.caption.bold())
+                Text(Self.turnText(turn)).font(.caption2).foregroundStyle(.secondary)
+                  .frame(width: 170, alignment: .leading)
+              }
+              .accessibilityElement(children: .combine)
+            }
+          }
+        }
+        Text("Aerial images are from a past flight. They show painted crosswalks, not traffic or signals. Nothing is said when none is detected.")
+          .font(.caption2).foregroundStyle(.secondary)
+      }
+    }
+  }
+
+  static func turnText(_ turn: RouteIntel.Turn) -> String {
+    switch turn.status {
+    case "ok": return "Marked crosswalk detected. Spoken with the turn notice."
+    case "empty": return "None detected. Nothing extra is said."
+    case "outside_box": return "Outside the imagery area. Not checked."
+    case "forbidden": return "Imagery refused. Not checked."
+    case "rate_limited": return "Server busy. Not checked."
+    case "timeout": return "Timed out. Not checked."
+    default: return "Check failed. Not checked."
+    }
   }
 
   private func row(_ label: String, _ value: String) -> some View {
@@ -210,5 +254,35 @@ struct RouteMapView: View {
       }
       context.draw(Text("N ↑").font(.caption2).foregroundStyle(.secondary), at: CGPoint(x: 18, y: 12))
     }
+  }
+}
+
+/// One aerial image with the crosswalk detection boxes drawn on it.
+struct AerialTileView: View {
+  let turn: RouteIntel.Turn
+
+  var body: some View {
+    ZStack {
+      if let data = turn.image, let image = UIImage(data: data) {
+        Image(uiImage: image).resizable().scaledToFill()
+      } else {
+        Color(.tertiarySystemFill)
+        Text("no image").font(.caption).foregroundStyle(.secondary)
+      }
+      GeometryReader { geometry in
+        ForEach(Array(turn.boxes.enumerated()), id: \.offset) { _, box in
+          if box.count == 4 {
+            Rectangle()
+              .stroke(.yellow, lineWidth: 3)
+              .frame(width: box[2] * geometry.size.width, height: box[3] * geometry.size.height)
+              .position(
+                x: (box[0] + box[2] / 2) * geometry.size.width,
+                y: (box[1] + box[3] / 2) * geometry.size.height)
+          }
+        }
+      }
+    }
+    .clipShape(RoundedRectangle(cornerRadius: 8))
+    .accessibilityLabel(turn.crosswalk ? "Aerial image with a marked crosswalk outlined" : "Aerial image")
   }
 }

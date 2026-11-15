@@ -38,6 +38,10 @@ final class NavController {
   private(set) var offRouteMetres = 0.0
   /// True while a saved walk is being replayed instead of live GPS.
   private(set) var isReplaying = false
+  /// CoStar route intel for the current route: crosswalks seen in aerial images, arrival blurb.
+  private(set) var intel: RouteIntel?
+  /// One line about the intel fetch, for the debug screen.
+  private(set) var intelStatus = "off (no server address in Settings)"
   /// Result of the last "save walk" action, for the screen.
   private(set) var walkMessage: String?
 
@@ -55,6 +59,13 @@ final class NavController {
   /// Search and routing, replaceable in tests.
   @ObservationIgnored var search: (String, GeoPoint) async throws -> [DestinationCandidate] = DestinationSearch.find
   @ObservationIgnored var reroute: (DestinationCandidate, GeoPoint) async throws -> DestinationCandidate = DestinationSearch.reroute
+  /// Route intel from the laptop server, replaceable in tests. Nil when off or failed.
+  @ObservationIgnored var fetchIntel: ([(id: Int, point: GeoPoint)], String, GeoPoint?) async -> RouteIntel? = { turns, name, point in
+    guard let base = RouteIntelClient.baseURL else { return nil }
+    return await RouteIntelClient.fetch(turns: turns, destinationName: name, destination: point, base: base)
+  }
+  /// True when a server address is set, so the status line can tell "off" from "failed".
+  @ObservationIgnored var intelEnabled: () -> Bool = { RouteIntelClient.baseURL != nil }
   /// Listening, replaceable in tests. Returns the transcript or nil.
   @ObservationIgnored var listen: () async -> String?
   @ObservationIgnored var cancelListen: () -> Void
@@ -262,7 +273,45 @@ final class NavController {
     offRouteMetres = 0
     state = .guiding
     statusText = "Going to \(destination.name)"
+    if !isReplaying { requestIntel() }
     if let fix = lastFix { received(fix) }  // speak the start cue now, not at the next GPS fix
+  }
+
+  /// Asks the laptop server about this route once, while guidance is already running.
+  /// Guidance never waits for it: the answer only matters at the first advance turn notice.
+  private func requestIntel() {
+    intel = nil
+    guard intelEnabled(), let destination else {
+      intelStatus = "off (no server address in Settings)"
+      return
+    }
+    let route = destination.route
+    let turns = engine.maneuvers.enumerated().map { (id: $0.offset, point: route.path.point(at: $0.element.along)) }
+    intelStatus = "asking the server about \(turns.count) turns…"
+    Task { [weak self] in
+      let result = await self?.fetchIntel(turns, destination.name, destination.point)
+      guard let self, self.state == .guiding || self.state == .listening, self.destination?.name == destination.name else { return }
+      guard let result else {
+        self.intelStatus = "unavailable (navigating without it)"
+        return
+      }
+      self.apply(result)
+    }
+  }
+
+  private func apply(_ result: RouteIntel) {
+    intel = result
+    intelStatus = result.summary
+    for turn in result.maneuvers where turn.crosswalk && engine.maneuvers.indices.contains(turn.id) {
+      let along = engine.maneuvers[turn.id].along
+      engine.setCrosswalk(true, nearAlong: along)
+      // Also on the stored route, so a saved walk keeps the crosswalk marks.
+      guard candidates.indices.contains(candidateIndex) else { continue }
+      for index in candidates[candidateIndex].route.junctions.indices
+      where abs(candidates[candidateIndex].route.junctions[index].along - along) <= 5 {
+        candidates[candidateIndex].route.junctions[index].crosswalk = true
+      }
+    }
   }
 
   func stopNavigation() {
@@ -295,6 +344,8 @@ final class NavController {
     ]
     candidateIndex = 0
     isReplaying = true
+    intel = walk.intel
+    intelStatus = walk.intel.map { "saved with the walk · " + $0.summary } ?? "none saved with this walk"
     lastFix = nil
     use(location: GPXReplayProvider(fixes: walk.locationFixes, speed: speed))
     beginGuidance()
@@ -314,7 +365,9 @@ final class NavController {
       walkMessage = "Nothing to save yet. Walk a route first."
       return
     }
-    store(SavedWalk(name: Self.walkName(destination.name), route: destination.route, fixes: walkFixes))
+    var walk = SavedWalk(name: Self.walkName(destination.name), route: destination.route, fixes: walkFixes)
+    walk.intel = intel
+    store(walk)
   }
 
   /// Saves the current route with a made-up steady walk along it, so a route found at the table
@@ -324,7 +377,9 @@ final class NavController {
       walkMessage = "Choose a destination first."
       return
     }
-    store(SavedWalk.simulated(name: Self.walkName(destination.name) + " simulated", route: destination.route))
+    var walk = SavedWalk.simulated(name: Self.walkName(destination.name) + " simulated", route: destination.route)
+    walk.intel = intel
+    store(walk)
   }
 
   private func store(_ walk: SavedWalk) {
@@ -360,6 +415,8 @@ final class NavController {
       if state == .guiding {
         state = .arrived
         statusText = "Arrived at \(destination?.name ?? "the destination")"
+        // What the building's Matterport model says about it, after the arrival cue.
+        if let blurb = intel?.arrival?.blurb { speakNotice(blurb) }
         endReplay()
       }
     case .idle, .guiding: break

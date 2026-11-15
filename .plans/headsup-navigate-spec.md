@@ -245,3 +245,31 @@ Consequences for the build:
 2. **The Matterport model returns no `geolocation`.** The arrival blurb cannot match by the model's own position. The server takes the building's latitude and longitude from `server/.env` (`MATTERPORT_MODEL_LAT`, `MATTERPORT_MODEL_LON`, values from the event's model index) instead.
 3. MapKit step text is inconsistent ("Take a right", "Take a slight left turn", "Walk over the bridge"). This confirms the rule in 5.4: derive left and right from geometry, not from the text.
 4. `/elements/detect` for crosswalks is still untested. It is tested in build phase 5.
+
+## 11. Build results (2026-11-14)
+
+| Phase | State | Checked how |
+|---|---|---|
+| 1 Engine, GPX replay | Done | Unit tests on synthetic walks |
+| 2 Speech arbiter | Done | Scripted unit tests, no audio |
+| 3 Button, voice, search | Done | Unit tests with fake listening, search and GPS. Not tried on a phone. |
+| 4 Replay, Route tab | Done | Unit tests, and run in the simulator |
+| 5 Server, crosswalks, blurb | Done | Server tests with fake services, plus one live request (below) |
+
+Live server request on real Princeton turns:
+
+| Turn | Result |
+|---|---|
+| Intersection on Washington Road with three painted crossings | `ok`, crosswalk detected, 1 box |
+| Campus plaza with no road | `empty`, nothing said |
+| A point in Houston | `outside_box`, no call made |
+| Destination next to the modelled building | Arrival blurb: "Rabinowitz Hall. Three floors, 32 rooms." |
+
+Changes from the plan above:
+- Guidance does not wait for route intel. The request runs while guidance starts, because the answer only matters at the first advance turn notice.
+- "Turn left" fires at about 30 ft, not 25 (one GPS fix per second).
+- The server caches only settled answers (`ok`, `empty`). Failures are tried again next time.
+
+To run the server: `cd server && ../.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000`, put the laptop on the phone's hotspot, and enter `http://<laptop address>:8000` under Settings → Route intel server.
+
+Still not verified on a device: the microphone and speech recognition, the Action button shortcut, live MapKit search from the phone, the phone reaching the server over the hotspot, speech audio and the hazard cut-off through the glasses.

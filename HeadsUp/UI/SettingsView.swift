@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Every threshold in the pipeline, plus outputs. Changes apply at once and are saved.
 struct SettingsView: View {
+  @AppStorage(RouteIntelClient.defaultsKey) private var intelServer = ""
   @Bindable var model: AppModel
 
   var body: some View {
@@ -25,6 +26,17 @@ struct SettingsView: View {
           }
         }
 
+        Section {
+          TextField("http://172.20.10.2:8000", text: $intelServer)
+            .keyboardType(.URL)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .accessibilityLabel("Route intel server address")
+        } header: {
+          Text("Route intel server")
+        } footer: {
+          Text("Address of the laptop running the HeadsUp server. It checks aerial images for marked crosswalks at each turn, once, when a route starts. Leave empty to navigate without it.")
+        }
         Section("Detection") {
           slider("Minimum confidence", value: floatBinding(\.minConfidence), range: 0.1...0.9, step: 0.05, format: "%.2f")
           slider("Keep a lost track for", value: $model.config.tracker.maxCoast, range: 0.2...2, step: 0.1, format: "%.1f s")

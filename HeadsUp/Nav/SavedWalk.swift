@@ -31,6 +31,9 @@ struct SavedWalk: Codable, Sendable, Equatable {
   var route: [Point]
   var junctions: [Junction]
   var fixes: [Fix]
+  /// The aerial-image findings for this route, if the walk was saved with them. Lets the replay
+  /// demo show crosswalk images and speak the arrival blurb with no server.
+  var intel: RouteIntel?
 
   init(name: String, route: NavRoute, fixes: [LocationFix]) {
     self.name = name

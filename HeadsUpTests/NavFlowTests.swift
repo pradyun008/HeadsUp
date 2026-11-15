@@ -236,3 +236,97 @@ final class NavControllerTestsLocation: LocationProvider {
   func start() {}
   func stop() {}
 }
+
+// 12. Route intel from the laptop server: what is said, and that every failure is silent.
+@MainActor
+final class RouteIntelTests: XCTestCase {
+  private let origin = GeoPoint(lat: 40.3500, lon: -74.6590)
+  private func at(_ east: Double, _ north: Double) -> GeoPoint { Geo.point(from: origin, east: east, north: north) }
+
+  func testServerAnswerIsDecodedAndMalformedIsRejected() {
+    let json = """
+      {"maneuvers": [
+        {"id": 0, "status": "ok", "crosswalk": true, "boxes": [[0.35, 0.32, 0.33, 0.31]], "tile": "tiles/a.jpg"},
+        {"id": 1, "status": "forbidden", "crosswalk": false, "boxes": [], "tile": null}],
+       "arrival": {"blurb": "Rabinowitz Hall. Three floors, 32 rooms."}}
+      """
+    let intel = RouteIntelClient.decode(Data(json.utf8))
+    XCTAssertEqual(intel?.maneuvers.map(\.crosswalk), [true, false])
+    XCTAssertEqual(intel?.arrival?.blurb, "Rabinowitz Hall. Three floors, 32 rooms.")
+    XCTAssertEqual(intel?.summary, "1 of 2 turns checked · 1 with a marked crosswalk")
+    XCTAssertNil(RouteIntelClient.decode(Data("<html>502</html>".utf8)))
+    XCTAssertNil(RouteIntelClient.decode(Data("{\"maneuvers\": 3}".utf8)))
+  }
+
+  /// Runs a whole route through the controller with a given server answer and returns what was spoken.
+  private func walk(intel: RouteIntel?) async -> (spoken: [String], nav: NavController) {
+    let location = NavControllerTestsLocation()
+    let nav = NavController(location: location)
+    var spoken: [String] = []
+    nav.speakCue = { spoken.append($0.text) }
+    nav.speakNotice = { spoken.append($0) }
+    nav.listen = { "take me to rabinowitz hall" }
+    nav.cancelListen = {}
+    nav.confirmSeconds = 0.02
+    nav.intelEnabled = { true }
+    nav.fetchIntel = { _, _, _ in intel }
+    let route = NavRoute(
+      path: RoutePath([at(0, 0), at(0, 120), at(100, 120), at(100, 60)]),
+      junctions: [.init(along: 120), .init(along: 220)], destinationName: "Rabinowitz Hall")
+    nav.search = { _, _ in
+      [DestinationCandidate(name: "Rabinowitz Hall", street: nil, point: self.at(100, 60), route: route, distanceMetres: 280, minutes: 4)]
+    }
+    location.onFix?(LocationFix(point: at(0, 0), time: 0))
+    nav.buttonPressed()
+    try? await Task.sleep(nanoseconds: 50_000_000)
+    nav.spoke(spoken.last ?? "")
+    try? await Task.sleep(nanoseconds: 150_000_000)
+    var time = 0.0
+    for point in SavedWalk.simulated(name: "t", route: route, wobble: 0).locationFixes {
+      time += 1
+      location.onFix?(LocationFix(point: point.point, time: time))
+    }
+    return (spoken, nav)
+  }
+
+  func testCrosswalkAndArrivalBlurbAreSpokenWhenTheServerFoundThem() async {
+    let intel = RouteIntel(
+      maneuvers: [
+        .init(id: 0, status: "ok", crosswalk: true, boxes: [[0.3, 0.3, 0.3, 0.3]]),
+        .init(id: 1, status: "empty", crosswalk: false),
+      ],
+      arrival: .init(blurb: "Rabinowitz Hall. Three floors, 32 rooms."))
+    let (spoken, nav) = await walk(intel: intel)
+    XCTAssertTrue(spoken.contains("In about 150 feet, turn right at a marked crosswalk."))
+    // The second turn had no detection: the plain cue, and never "no crosswalk".
+    XCTAssertTrue(spoken.contains("In about 150 feet, turn right."))
+    XCTAssertFalse(spoken.contains { $0.lowercased().contains("no crosswalk") })
+    XCTAssertEqual(Array(spoken.suffix(2)), ["You have arrived at Rabinowitz Hall.", "Rabinowitz Hall. Three floors, 32 rooms."])
+    XCTAssertEqual(nav.intelStatus, "2 of 2 turns checked · 1 with a marked crosswalk")
+    // The crosswalk mark is kept on the route, so a saved walk has it too.
+    XCTAssertEqual(nav.destination?.route.junctions.map(\.crosswalk), [true, false])
+  }
+
+  func testEveryServerFailureIsSilent() async {
+    // No answer at all (timeout, wrong address, malformed JSON).
+    let (silent, nav) = await walk(intel: nil)
+    XCTAssertFalse(silent.contains { $0.contains("crosswalk") })
+    XCTAssertEqual(silent.last, "You have arrived at Rabinowitz Hall.")
+    XCTAssertEqual(nav.intelStatus, "unavailable (navigating without it)")
+
+    // Answered, but nothing could be checked.
+    let refused = RouteIntel(maneuvers: [
+      .init(id: 0, status: "forbidden", crosswalk: false), .init(id: 1, status: "timeout", crosswalk: false),
+    ])
+    let (spoken, _) = await walk(intel: refused)
+    XCTAssertFalse(spoken.contains { $0.contains("crosswalk") })
+    XCTAssertEqual(spoken.filter { $0 == "In about 150 feet, turn right." }.count, 2)
+  }
+
+  func testEachStatusHasWordingThatNeverClaimsAbsence() {
+    for status in ["ok", "empty", "outside_box", "forbidden", "rate_limited", "timeout", "error"] {
+      let text = NavDebugView.turnText(.init(id: 0, status: status, crosswalk: status == "ok"))
+      XCTAssertFalse(text.lowercased().contains("no crosswalk"), status)
+    }
+  }
+}

@@ -52,6 +52,9 @@ targets:
           - bluetooth-peripheral
           - external-accessory
         UISupportedExternalAccessoryProtocols: [com.meta.ar.wearable]
+        # The route-intel server runs on a laptop on the phone's hotspot (plain http, local only).
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         NSBluetoothAlwaysUsageDescription: Needed to connect to your Meta glasses.
         NSLocalNetworkUsageDescription: Lets your phone find and connect to your glasses over Wi-Fi.
         NSBonjourServices: [_bonjour._tcp]
