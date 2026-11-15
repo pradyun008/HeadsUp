@@ -39,8 +39,7 @@ struct MainView: View {
             .font(.title.bold())
             .frame(maxWidth: .infinity, minHeight: 64)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(model.isWatching ? .red : .accentColor)
+        .buttonStyle(.vibrantGlass(model.isWatching ? .red : .green))
         .accessibilityHint(model.isWatching ? "Stops watching" : "Starts watching with \(model.sourceName)")
 
         glassesSection
@@ -71,7 +70,7 @@ struct MainView: View {
           .font(.title.bold())
           .frame(maxWidth: .infinity, minHeight: 64)
       }
-      .buttonStyle(.borderedProminent)
+      .buttonStyle(.vibrantGlass(.indigo))
       .disabled(nav.state == .listening)
       .accessibilityHint(
         confirming
@@ -81,8 +80,7 @@ struct MainView: View {
         Button(action: { nav.stopNavigation() }) {
           Text("Stop navigation").font(.title3.bold()).frame(maxWidth: .infinity, minHeight: 48)
         }
-        .buttonStyle(.bordered)
-        .tint(.red)
+        .buttonStyle(.vibrantGlass(.red))
       }
       if let heard = nav.lastHeard {
         Text("Heard: “\(heard)”").font(.body)
@@ -150,7 +148,7 @@ struct MainView: View {
         Button(action: { glasses.connectToMetaAI() }) {
           Text("Connect glasses in Meta AI").font(.title3.bold()).frame(maxWidth: .infinity, minHeight: 48)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.vibrantGlass(.blue))
         .accessibilityHint("Opens the Meta AI app")
       } else if !useMockGlasses {
         Button("Disconnect from Meta AI") { glasses.disconnectFromMetaAI() }

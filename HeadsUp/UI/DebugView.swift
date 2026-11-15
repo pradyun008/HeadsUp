@@ -73,16 +73,14 @@ struct DebugView: View {
         Button(action: { model.isWatching ? model.stop() : model.start() }) {
           Text(model.isWatching ? "Stop" : "Start").font(.title3.bold()).frame(maxWidth: .infinity, minHeight: 44)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(model.isWatching ? .red : .accentColor)
+        .buttonStyle(.vibrantGlass(model.isWatching ? .red : .green))
 
         // Saves the incoming frames from whichever source is running to a .mov in Documents.
         Button(action: { model.toggleRecording() }) {
           Label(model.isRecording ? "Stop rec" : "Record", systemImage: model.isRecording ? "stop.circle.fill" : "record.circle")
             .font(.title3.bold()).frame(minHeight: 44)
         }
-        .buttonStyle(.bordered)
-        .tint(.red)
+        .buttonStyle(.vibrantGlass(.orange))
         .disabled(!model.isWatching)
         .accessibilityHint("Saves incoming video frames to a file for replay")
       }
