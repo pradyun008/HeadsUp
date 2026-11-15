@@ -109,6 +109,7 @@ Known limitations (document them, don't try to solve them):
 - **Main screen:** big status ("Watching" / "Glasses disconnected" / ...), source picker (Glasses, Phone camera, Video file), band connection state, and start/stop. Large text and full VoiceOver labels, since the wearer may be blind.
 - **Debug screen** (this is for judges, so make it clear and readable): live frame with boxes, each labeled with class, track ID, tau and risk level. Boxes are colored by state: grey = not approaching, blue = passing, orange/red = on course by level. Draw the corridor lines at ±c. Add a head-motion "unstable" indicator, current left/right levels as two bars, fps, and **end-to-end latency** (frame timestamp → band write, plus detection time per frame) as a rolling average. Show tau labeled "est." because it's an estimate.
 - **Settings:** all thresholds above, which wrist, voice on/off, and haptics output (band, phone, both).
+- **Onboarding** (added Nov 15): five slides shown once before the tabs (welcome, left cue, right cue, both cues with rising intensity, ending). Design in `.plans/headsup-onboarding-spec.md`. Main action buttons use tinted Liquid Glass (`VibrantGlassButtonStyle`).
 
 ## Testing
 
