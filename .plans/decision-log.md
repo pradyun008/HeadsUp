@@ -219,3 +219,18 @@ Entry template:
 - Date: 2026-11-14 · Status: Decided · By: Roman
 - Decision: during a replayed GPS walk the hazard check uses the real sensors (wearer stationary at the table). No faked wearer motion.
 - Consequence: the table demo cannot show a standing person being suppressed as "walking into".
+
+## Onboarding and UI (added 2026-11-15)
+
+### D-34 · First-run onboarding: five slides, cues shown not played
+- Date: 2026-11-15 · Status: Proposed · By: Eric
+- Decision: a five-slide onboarding (welcome, left cue, right cue, both cues with rising intensity, ending) shown once before the tabs, specified in `headsup-onboarding-spec.md`. The ending line is "HeadsUp tells you what's around you. You decide what to do."
+- Why: a caretaker or VoiceOver user needs to learn what each cue means before the first walk. The requested ending, "We'll keep you safe for now.", was replaced because Rule 1 forbids saying anything is safe.
+- Alternatives considered: playing the real cues on the band or phone during the slides. Not now: those outputs belong to the hazard loop and the band has no BLE yet.
+- Affects: `HeadsUpApp.swift`, `OnboardingView.swift`, `WristbandIllustration.swift`.
+
+### D-35 · Main action buttons use tinted Liquid Glass
+- Date: 2026-11-15 · Status: Proposed · By: Eric
+- Decision: the main action buttons on Main, Debug and Route use `VibrantGlassButtonStyle` (iOS 26 glass tinted with a system color; solid fallback before iOS 26 and under Reduce Transparency). Layout unchanged. Labels pick black or white per tint for contrast; measured at 5.1:1 or better in Light and Dark.
+- Why: clearer, more distinct actions, and color-coded start (green) and stop (red).
+- Affects: `GlassButtonStyle.swift`, `MainView.swift`, `DebugView.swift`, `NavDebugView.swift`.

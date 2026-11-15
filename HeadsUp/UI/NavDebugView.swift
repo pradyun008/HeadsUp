@@ -133,7 +133,7 @@ struct NavDebugView: View {
       }) {
         Text("Replay demo").font(.title3.bold()).frame(maxWidth: .infinity, minHeight: 44)
       }
-      .buttonStyle(.borderedProminent)
+      .buttonStyle(.vibrantGlass(.indigo))
       .accessibilityHint("Replays the saved walk and a recorded video together. Needs no GPS or network.")
       Button(action: {
         nav.stopNavigation()
@@ -141,8 +141,7 @@ struct NavDebugView: View {
       }) {
         Text("Stop").font(.title3.bold()).frame(minWidth: 80, minHeight: 44)
       }
-      .buttonStyle(.bordered)
-      .tint(.red)
+      .buttonStyle(.vibrantGlass(.red))
     }
   }
 
