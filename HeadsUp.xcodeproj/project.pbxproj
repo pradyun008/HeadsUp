@@ -68,6 +68,7 @@
 		8E5AE3824BB089BCB344E03C /* SavedWalk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7294A92F342233AFAAC083E8 /* SavedWalk.swift */; };
 		3FF9E706105E30FCE9400B38 /* NavDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30B910AF7C0CFE18CD2662B4 /* NavDebugView.swift */; };
 		06E26798C6B297FD724FC3CF /* RouteIntelClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 171E9F4679D507BE0AFE2974 /* RouteIntelClient.swift */; };
+		E065AED841F1C87E10BAF235 /* FocalTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD88B99318E8103484227EAD /* FocalTestView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -142,6 +143,7 @@
 		7294A92F342233AFAAC083E8 /* SavedWalk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedWalk.swift; sourceTree = "<group>"; };
 		30B910AF7C0CFE18CD2662B4 /* NavDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavDebugView.swift; sourceTree = "<group>"; };
 		171E9F4679D507BE0AFE2974 /* RouteIntelClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteIntelClient.swift; sourceTree = "<group>"; };
+		FD88B99318E8103484227EAD /* FocalTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocalTestView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -162,6 +164,7 @@
 			isa = PBXGroup;
 			children = (
 				EFAD5E9DFBC21806B4F13D1B /* DebugView.swift */,
+				FD88B99318E8103484227EAD /* FocalTestView.swift */,
 				CB36975701A88C4F8CC081D2 /* MainView.swift */,
 				30B910AF7C0CFE18CD2662B4 /* NavDebugView.swift */,
 				1BCFC636048FE030AE9F5144 /* SettingsView.swift */,
@@ -455,6 +458,7 @@
 				B4C2597512AA6769BE46B508 /* DestinationSearch.swift in Sources */,
 				8D3A011CDB758DB95A0E18E0 /* Detection.swift in Sources */,
 				B7DF1C883D9382186D1C1648 /* Detector.swift in Sources */,
+				E065AED841F1C87E10BAF235 /* FocalTestView.swift in Sources */,
 				92DB54A2A36ACCA6CB631F0B /* FrameRecorder.swift in Sources */,
 				E385EE7674C0079ABB3D89F2 /* FrameSource.swift in Sources */,
 				A28025E3A034F25CF02EC834 /* GlassesFrameSource.swift in Sources */,

@@ -3,6 +3,7 @@ import SwiftUI
 /// The judge-facing view: the live frame with what the pipeline sees drawn on top.
 struct DebugView: View {
   let model: AppModel
+  @State private var showFocalTest = false
 
   var body: some View {
     VStack(spacing: 12) {
@@ -78,6 +79,10 @@ struct DebugView: View {
         .disabled(!model.isWatching)
         .accessibilityHint("Saves incoming video frames to a file for replay")
       }
+      // The tape test that measures the camera's focal length, used for distance estimates.
+      Button("Focal length test") { showFocalTest = true }
+        .font(.callout)
+        .sheet(isPresented: $showFocalTest) { FocalTestView(model: model) }
     }
     .padding()
   }

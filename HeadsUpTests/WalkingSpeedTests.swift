@@ -45,3 +45,27 @@ final class WalkingSpeedTests: XCTestCase {
     XCTAssertEqual(e.current, .stationary)
   }
 }
+
+final class FocalTestTests: XCTestCase {
+  // A 6 ft (1.829 m) person whose box is 0.366 of the frame at 3 m gives f = 0.6.
+  func testFocalLengthFromOneReading() {
+    XCTAssertEqual(FocalTest.focalLength(boxHeight: 0.3658, distance: 3, personHeight: 1.8288), 0.6, accuracy: 0.001)
+    // The same camera at 5 m and 7 m: the box shrinks, the focal length does not change.
+    XCTAssertEqual(FocalTest.focalLength(boxHeight: 0.2195, distance: 5, personHeight: 1.8288), 0.6, accuracy: 0.001)
+    XCTAssertEqual(FocalTest.focalLength(boxHeight: 0.1568, distance: 7, personHeight: 1.8288), 0.6, accuracy: 0.001)
+  }
+
+  func testAverageAndSpread() {
+    let result = FocalTest.average([0.60, 0.62, 0.58])!
+    XCTAssertEqual(result.mean, 0.60, accuracy: 0.0001)
+    XCTAssertEqual(result.spread, 0.0667, accuracy: 0.001)
+    XCTAssertNil(FocalTest.average([]))
+  }
+
+  // The measured focal length must give back the taped distance for the same box.
+  func testMeasuredFocalLengthReproducesTheDistance() {
+    let f = FocalTest.focalLength(boxHeight: 0.25, distance: 5, personHeight: 1.7)
+    let distance = RiskEstimator.distance(objectClass: .person, top: 0.3, bottom: 0.55, focalLength: f)
+    XCTAssertEqual(distance?.metres ?? 0, 5, accuracy: 0.01)
+  }
+}

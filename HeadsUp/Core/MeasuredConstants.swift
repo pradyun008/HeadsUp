@@ -32,7 +32,15 @@ enum MeasuredConstants {
   /// TEST (tape test, at the demo stream resolution): stand a person of known height at 3 m, 5 m and
   /// 7 m (whole body in frame, near the centre), read "box h" on the debug screen, and average
   /// f = box h × distance ÷ person's height. Re-measure if the stream resolution changes.
-  static let focalLength = 0.6
+  ///
+  /// The Debug tab's "Focal test" runs this test on the phone and saves the result. A saved value
+  /// is used instead of the placeholder, from the next time the app is opened.
+  static let focalLength: Double = {
+    let saved = UserDefaults.standard.double(forKey: focalLengthKey)
+    return saved > 0 ? saved : placeholderFocalLength
+  }()
+  static let placeholderFocalLength = 0.6
+  static let focalLengthKey = "measuredFocalLength"
 
   // MARK: - Object sizes
 
