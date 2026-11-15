@@ -112,6 +112,8 @@ Entry template:
 - Alternatives considered: monocular depth model; ground comparison (see D-17).
 - Update 2026-11-14 (Pradyun, implemented): measured values live in `HeadsUp/Core/MeasuredConstants.swift` (focal length in frame heights, placeholder 0.6 until the tape test; typical HEIGHT for every class: person 1.7, bicycle 1.05, motorcycle 1.15, car 1.5, bus 3.1, truck 2.5 m). Height for all classes because it stays steady across viewpoints. Distance is computed for every tracked object every frame and shown on the debug screen; boxes touching the top/bottom frame edge are marked unreliable.
 
+- Update 2026-11-14 (Roman, measured): focal length = **0.63 frame heights**, from the tape test on the glasses stream (360×640). Six readings: a 6 ft person gave 0.625 / 0.637 / 0.648 at 3 / 5 / 7 m; a 5 ft 8 in person gave 0.594 / 0.626 / 0.641. Mean 0.629, span about 9%. The reading rises with distance for both people. `MeasuredConstants.focalLength` is now MEASURED; a value saved by the Debug tab's "Focal length test" overrides it on that phone.
+
 ### D-14 · Wearer speed from the iPhone pedometer
 - Date: 2026-11-14 · Status: Proposed
 - Decision: speed = cadence × calibrated step length (walk 20 m, count steps), per the handoff PDF.

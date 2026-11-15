@@ -5,7 +5,7 @@ import SwiftUI
 /// A person of known height stands at 3 m, 5 m and 7 m with their WHOLE body in the frame.
 /// At each distance:  focal length = box height × distance ÷ person's height,
 /// where box height is a fraction of the frame height. The three results are averaged.
-/// The saved value replaces the placeholder in `MeasuredConstants.focalLength`.
+/// A saved value overrides the built-in one in `MeasuredConstants.focalLength`.
 enum FocalTest {
   static let distances = [3.0, 5.0, 7.0]
 
@@ -93,7 +93,7 @@ struct FocalTestView: View {
             Text(String(format: "Saved: %.3f. It takes effect the next time the app is opened.", savedFocalLength))
             Button("Forget the saved value", role: .destructive) { savedFocalLength = 0 }
           } else {
-            Text("Nothing saved. The app uses the placeholder.").foregroundStyle(.secondary)
+            Text(String(format: "Nothing saved on this phone. The app uses its built-in measured value, %.2f.", MeasuredConstants.builtInFocalLength)).foregroundStyle(.secondary)
           }
         } header: {
           Text("Focal length (in frame heights)")

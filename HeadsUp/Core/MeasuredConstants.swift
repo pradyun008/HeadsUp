@@ -28,18 +28,29 @@ enum MeasuredConstants {
   /// `top`/`bottom`, where 0 is the top of the frame and 1 the bottom).
   /// Meaning: an object 1 m tall standing 1 m from the camera has a box this many frame heights tall.
   ///
-  /// STATUS: PLACEHOLDER.
-  /// TEST (tape test, at the demo stream resolution): stand a person of known height at 3 m, 5 m and
-  /// 7 m (whole body in frame, near the centre), read "box h" on the debug screen, and average
-  /// f = box h × distance ÷ person's height. Re-measure if the stream resolution changes.
+  /// STATUS: MEASURED (2026-11-14, tape test on the glasses stream at 360×640, with the Debug
+  /// tab's "Focal length test"). Six readings, two people:
   ///
-  /// The Debug tab's "Focal test" runs this test on the phone and saves the result. A saved value
-  /// is used instead of the placeholder, from the next time the app is opened.
+  ///     distance   6 ft 0 in person   5 ft 8 in person
+  ///     3 m        0.625              0.594
+  ///     5 m        0.637              0.626
+  ///     7 m        0.648              0.641
+  ///
+  /// Mean of all six: 0.629, rounded to 0.63. The readings span 0.594–0.648 (about 9%), so
+  /// distances from this value are good to roughly ±5% for a person of typical height, before
+  /// the larger error from people being taller or shorter than `typicalHeight`.
+  /// Known pattern: the reading rises with distance for both people (boxes are slightly tight
+  /// on a near, large person). Using one value therefore reads near objects a little too far,
+  /// which errs toward "moving" (toward warning).
+  /// Re-measure if the stream resolution changes.
+  ///
+  /// A value saved on the phone by the "Focal length test" screen overrides this one, from the
+  /// next time the app is opened.
   static let focalLength: Double = {
     let saved = UserDefaults.standard.double(forKey: focalLengthKey)
-    return saved > 0 ? saved : placeholderFocalLength
+    return saved > 0 ? saved : builtInFocalLength
   }()
-  static let placeholderFocalLength = 0.6
+  static let builtInFocalLength = 0.63
   static let focalLengthKey = "measuredFocalLength"
 
   // MARK: - Object sizes
