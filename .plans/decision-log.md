@@ -233,4 +233,4 @@ Entry template:
 - Finding (171 s hallway screen recording): a teammate WALKING at a walking wearer read "own" 0.8–0.9 m/s, under the 1.0 cutoff, so they were labelled "walking into" and the band stayed silent until the box was cut off at about 1.5 m. A runner (own 1.7–2.3 m/s) warned from about 7 m. Standing people read about −0.2 to +0.4 m/s.
 - Decision: `MeasuredConstants.movingCutoff = 0.5`.
 - Risk: a standing person whose "own" reading spikes above 0.5 for 3 frames now warns. Raise toward 0.6 if that shows up.
-- Not changed: the tau level thresholds (4 / 2.5 / 1.5 s). They are in Settings and saved on the phone, so they can be tried live without a rebuild.
+- Also changed (same day): the default tau level thresholds, from 4 / 2.5 / 1.5 s to 5 / 3.5 / 2 s, to warn earlier about slow walkers (at 0.8 m/s: level 1 at about 4 m instead of 3.2 m, speech at about 2.8 m instead of 2 m). This differs from the table in `CLAUDE.md`. Settings saved on a phone override the code defaults, so set them in the app's Settings tab too. Cost: more level-1 flicker from far or standing people, and the person on course can get a second spoken cue.

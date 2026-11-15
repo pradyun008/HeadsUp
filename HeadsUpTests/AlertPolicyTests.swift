@@ -153,9 +153,13 @@ final class AlertPolicyTests: XCTestCase {
     }
     XCTAssertEqual(maxDuringPass, 0)
     XCTAssertEqual(maxDuringApproach, 3)
-    XCTAssertEqual(cues.map(\.text), ["person, ahead"])
-    // Spoken when about 2.5 s remain (true contact is at 10.5 + 12/1.4 ≈ 19.07 s).
-    XCTAssertEqual(19.07 - cues[0].time, 2.5, accuracy: 0.5)
+    // Nothing is spoken for the passer (before t = 10). The person on course is announced first as
+    // "ahead"; a second cue for the same person ("right", as they close in) is allowed.
+    XCTAssertEqual(cues.first?.text, "person, ahead")
+    XCTAssertTrue(cues.allSatisfy { $0.time > 10 })
+    XCTAssertTrue(cues.allSatisfy { $0.text.hasPrefix("person") })
+    // Spoken when about 3.5 s remain (true contact is at 10.5 + 12/1.4 ≈ 19.07 s).
+    XCTAssertEqual(19.07 - cues[0].time, 3.5, accuracy: 0.5)
   }
 }
 

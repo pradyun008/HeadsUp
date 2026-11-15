@@ -75,11 +75,11 @@ struct RiskConfig: Sendable, Equatable, Codable {
   /// Expansion rates at or below this (per second) count as "not approaching".
   var minExpansionRate = 0.05
   /// tau above this → level 0.
-  var tauLow = 4.0
+  var tauLow = 5.0
   /// tau below this → level 2.
-  var tauHigh = 2.5
+  var tauHigh = 3.5
   /// tau below this → level 3.
-  var tauUrgent = 1.5
+  var tauUrgent = 2.0
   /// Global shift faster than this (normalized x units per second) marks the frame unstable.
   var unstableShiftRate = 0.5
   /// Keep holding for this long after the last unstable frame.

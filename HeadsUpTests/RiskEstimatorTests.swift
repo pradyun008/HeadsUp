@@ -101,20 +101,20 @@ final class RiskEstimatorTests: XCTestCase {
 
   // 6. A sudden global shift of every box (head turn) → frame unstable, levels held and not raised.
   func testHeadTurnMarksUnstableAndHoldsLevels() {
-    // The person is at tau ≈ 3 s (level 1) when the wearer glances aside and back.
+    // The person is at tau ≈ 3 s (level 2) when the wearer glances aside and back.
     var scenario = Scenario.walksToward
     scenario.headTurns = Scenario.glance(at: 6.0)
     let steps = run(scenario)
 
     let before = steps.last { $0.time < 6.0 }!
     XCTAssertFalse(before.frame.unstable)
-    XCTAssertEqual(before.only?.level, 1)
+    XCTAssertEqual(before.only?.level, 2)
 
     let during = steps.filter { $0.time > 6.05 && $0.time < 6.3 }
     XCTAssertFalse(during.isEmpty)
     for step in during {
       XCTAssertTrue(step.frame.unstable, "t=\(step.time)")
-      XCTAssertEqual(step.only?.level, 1, "level must be held, t=\(step.time)")
+      XCTAssertEqual(step.only?.level, 2, "level must be held, t=\(step.time)")
       XCTAssertEqual(step.only?.held, true)
       XCTAssertEqual(step.only?.trackID, before.only?.trackID)
     }
@@ -198,9 +198,10 @@ final class RiskEstimatorTests: XCTestCase {
 
   func testLevelThresholds() {
     let e = RiskEstimator()
-    XCTAssertEqual(e.level(forTau: 5), 0)
-    XCTAssertEqual(e.level(forTau: 3), 1)
-    XCTAssertEqual(e.level(forTau: 2), 2)
+    // Thresholds 5 / 3.5 / 2 s (raised 2026-11-15 from 4 / 2.5 / 1.5 to warn earlier).
+    XCTAssertEqual(e.level(forTau: 6), 0)
+    XCTAssertEqual(e.level(forTau: 4), 1)
+    XCTAssertEqual(e.level(forTau: 3), 2)
     XCTAssertEqual(e.level(forTau: 1), 3)
   }
 
