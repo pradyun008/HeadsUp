@@ -103,12 +103,17 @@ enum MeasuredConstants {
 
   /// Walking yes/no comes from the phone's shake (see `StepDetector`), not Apple's activity label,
   /// which took ~10 s to switch in Run A (2026-11-15).
-  /// Root-mean-square acceleration (gravity removed) above this, in g, over `stepWindow` = walking.
+  /// Root-mean-square acceleration (gravity removed), in g, over `stepWindow`:
+  /// above `stepWobbleStart` → walking; back to stationary only below `stepWobbleStop`.
+  /// The gap between the two stops the label flipping when the shake hovers near one line.
   ///
-  /// STATUS: GUESS (0.05 g: standing with the phone in hand is about 0.01–0.02 g, walking 0.1 g+).
-  /// TEST: watch "Step wobble" on the Debug tab while (1) standing still with the phone in its demo
-  /// position, (2) walking slowly, (3) walking normally. Put the threshold between (1) and (2).
-  static let stepWobbleThreshold = 0.05
+  /// STATUS: MEASURED (2026-11-15, phone held in hand while filming, Debug tab "Step wobble"):
+  ///     standing still   0.005–0.009 g
+  ///     walking          up to 0.025 g (the lowest walking value was not noted)
+  /// The first guess (0.05) was far too high: the phone held steady in a hand shakes much less
+  /// than one in a pocket. Re-measure if the phone is carried differently.
+  static let stepWobbleStart = 0.015
+  static let stepWobbleStop = 0.011
 
   /// How many seconds of shake the step detector averages. Shorter reacts faster but flickers
   /// between steps; it should cover about 3 steps.
