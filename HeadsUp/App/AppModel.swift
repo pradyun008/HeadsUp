@@ -59,7 +59,7 @@ final class AppModel {
   private(set) var risk = RiskFrame()
   /// Priority: the most urgent object right now (lowest tau), from AlertPolicy.
   private(set) var topTrackID: Int?
-  /// The step detector's shake in g (walking above `MeasuredConstants.stepWobbleThreshold`).
+  /// The step detector's shake in g (walking above `MeasuredConstants.stepWobbleStart`).
   private(set) var stepWobble = 0.0
   /// Smoothed output levels, 0–3. "Left" and "right" are camera-relative.
   private(set) var leftLevel = 0

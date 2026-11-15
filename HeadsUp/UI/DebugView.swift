@@ -30,8 +30,8 @@ struct DebugView: View {
         // The step detector's input: walking when the shake is above the threshold.
         Text(
           String(
-            format: "Step wobble %.3f g (walking above %.3f)", model.stepWobble,
-            MeasuredConstants.stepWobbleThreshold)
+            format: "Step wobble %.3f g (walking above %.3f, stationary below %.3f)", model.stepWobble,
+            MeasuredConstants.stepWobbleStart, MeasuredConstants.stepWobbleStop)
         )
         .font(.caption.monospacedDigit())
         LevelBars(left: model.leftLevel, right: model.rightLevel)

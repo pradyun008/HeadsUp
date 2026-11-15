@@ -52,7 +52,8 @@ struct WalkingSpeedEstimator: Sendable {
 ///
 /// How: each step shakes the phone (about 2 bumps a second). Standing still, the shake is near
 /// zero. `wobble` = root-mean-square of the acceleration (gravity removed, in g) over the last
-/// `MeasuredConstants.stepWindow` seconds. Above `MeasuredConstants.stepWobbleThreshold` = walking.
+/// `MeasuredConstants.stepWindow` seconds. Above `MeasuredConstants.stepWobbleStart` = walking;
+/// back to stationary only below `MeasuredConstants.stepWobbleStop`.
 /// Plain logic with no sensors, so it can be unit-tested.
 struct StepDetector: Sendable {
   private var samples: [(time: Double, squared: Double)] = []
@@ -75,7 +76,9 @@ struct StepDetector: Sendable {
     wobble = (max(0, sum) / Double(samples.count)).squareRoot()
     // Until the window has filled once (just started), stay stationary: subtract nothing.
     let full = time - (samples.first?.time ?? time) >= 0.9 * MeasuredConstants.stepWindow
-    let walking = full && wobble > MeasuredConstants.stepWobbleThreshold
+    // Two lines with a gap: start walking above the higher one, stop only below the lower one.
+    let line = isWalking ? MeasuredConstants.stepWobbleStop : MeasuredConstants.stepWobbleStart
+    let walking = full && wobble > line
     defer { isWalking = walking }
     return walking != isWalking
   }
