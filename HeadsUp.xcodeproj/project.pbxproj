@@ -65,6 +65,8 @@
 		0DB344C4F51086EB4495D9AF /* NavFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26591A501E4075953F3C1F7C /* NavFlowTests.swift */; };
 		99F41EB8CB7F09EB455A18A6 /* NavigationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF64BEE80B9C21CA5F8FF6AC /* NavigationEngineTests.swift */; };
 		82D13E32463E293B74009061 /* SpeechArbiterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A1C5B8B0F11BCA6CE75C86 /* SpeechArbiterTests.swift */; };
+		8E5AE3824BB089BCB344E03C /* SavedWalk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7294A92F342233AFAAC083E8 /* SavedWalk.swift */; };
+		3FF9E706105E30FCE9400B38 /* NavDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30B910AF7C0CFE18CD2662B4 /* NavDebugView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -136,6 +138,8 @@
 		26591A501E4075953F3C1F7C /* NavFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavFlowTests.swift; sourceTree = "<group>"; };
 		DF64BEE80B9C21CA5F8FF6AC /* NavigationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationEngineTests.swift; sourceTree = "<group>"; };
 		47A1C5B8B0F11BCA6CE75C86 /* SpeechArbiterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechArbiterTests.swift; sourceTree = "<group>"; };
+		7294A92F342233AFAAC083E8 /* SavedWalk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedWalk.swift; sourceTree = "<group>"; };
+		30B910AF7C0CFE18CD2662B4 /* NavDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavDebugView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -157,6 +161,7 @@
 			children = (
 				EFAD5E9DFBC21806B4F13D1B /* DebugView.swift */,
 				CB36975701A88C4F8CC081D2 /* MainView.swift */,
+				30B910AF7C0CFE18CD2662B4 /* NavDebugView.swift */,
 				1BCFC636048FE030AE9F5144 /* SettingsView.swift */,
 			);
 			path = UI;
@@ -298,6 +303,7 @@
 				D6D793E85E33147C18674114 /* NavigationEngine.swift */,
 				810F84B5AC82BF5CF22D2F2B /* NavIntent.swift */,
 				AE9EC4D0F33AD2E425964344 /* RouteGeometry.swift */,
+				7294A92F342233AFAAC083E8 /* SavedWalk.swift */,
 				FDA76824DC66F0957D4C94C5 /* SpeechArbiter.swift */,
 				571AD15105B5FACD53768E6A /* VoiceCommand.swift */,
 			);
@@ -456,6 +462,7 @@
 				D2582C9E9E7E1B89C2F8E185 /* MeasuredConstants.swift in Sources */,
 				1AF2E0E522162ABFEB52DCE3 /* MockGlasses.swift in Sources */,
 				464EF0B87418086656EDC602 /* NavController.swift in Sources */,
+				3FF9E706105E30FCE9400B38 /* NavDebugView.swift in Sources */,
 				4A9BC79569832CE24B6E160A /* NavigationEngine.swift in Sources */,
 				6E978D50BB8D6F8199EDA445 /* NavIntent.swift in Sources */,
 				4B07B5CBF3295AC5F03C1EBF /* PhoneCameraFrameSource.swift in Sources */,
@@ -463,6 +470,7 @@
 				F2CDD64E89CCF5EF0DBDDF29 /* Pipeline.swift in Sources */,
 				782149C638D336BACFC5A034 /* RiskEstimator.swift in Sources */,
 				BB86051E9B1CA69BF2EE4527 /* RouteGeometry.swift in Sources */,
+				8E5AE3824BB089BCB344E03C /* SavedWalk.swift in Sources */,
 				2B282898F6D8585EA81C413B /* Scenario.swift in Sources */,
 				47AEA3838F445BB3062CEF68 /* ScenarioFrameSource.swift in Sources */,
 				EC0CE583E400BEDAFF485B5E /* SettingsView.swift in Sources */,

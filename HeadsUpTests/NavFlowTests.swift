@@ -179,3 +179,60 @@ final class NavControllerTests: XCTestCase {
     XCTAssertEqual(nav.state, .guiding)
   }
 }
+
+/// Saved walks and the replay demo (no GPS, no network).
+@MainActor
+final class ReplayTests: XCTestCase {
+  func testSavedWalkSurvivesSavingAndLoading() throws {
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("walks-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    var walk = SavedWalk.builtIn
+    walk.name = "Test walk: one/two"
+    let url = try walk.save(in: folder)
+    XCTAssertEqual(url.lastPathComponent, "Test walk- one-two.walk.json")
+    let loaded = SavedWalk.all(in: folder)
+    XCTAssertEqual(loaded.map(\.name), ["Test walk: one/two", "Built-in block"])
+    XCTAssertEqual(loaded[0], walk)
+    // The route keeps its turns and its crosswalk mark.
+    XCTAssertEqual(loaded[0].navRoute.junctions.map(\.crosswalk), [true, false, false])
+    try? FileManager.default.removeItem(at: folder)
+  }
+
+  // The whole built-in walk, replayed fast through the real controller: every cue, in order.
+  func testReplayOfBuiltInWalkSpeaksTheWholeRoute() async {
+    let nav = NavController(location: NavControllerTestsLocation())
+    var spoken: [String] = []
+    nav.speakCue = { spoken.append($0.text) }
+    nav.speakNotice = { spoken.append($0) }
+    nav.replay(.builtIn, speed: 200)
+    XCTAssertTrue(nav.isReplaying)
+    for _ in 0..<100 where nav.state != .arrived {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+    XCTAssertEqual(nav.state, .arrived)
+    XCTAssertFalse(nav.isReplaying, "live GPS is restored when the replay ends")
+    XCTAssertEqual(
+      spoken,
+      [
+        "Head toward Main Street.",
+        "In about 150 feet, turn left at a marked crosswalk.",
+        "Turn left.",
+        "Walk straight for 250 feet.",
+        "In about 150 feet, turn right onto Oak Avenue.",
+        "Turn right.",
+        "Walk straight for 250 feet.",
+        "In about 150 feet, turn right.",
+        "Turn right.",
+        "Walk straight for 200 feet.",
+        "You have arrived at the library, on your left.",
+      ])
+  }
+}
+
+@MainActor
+final class NavControllerTestsLocation: LocationProvider {
+  var onFix: ((LocationFix) -> Void)?
+  var onProblem: ((String?) -> Void)?
+  func start() {}
+  func stop() {}
+}

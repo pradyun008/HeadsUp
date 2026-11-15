@@ -64,9 +64,12 @@ final class CoreLocationProvider: NSObject, LocationProvider, CLLocationManagerD
   }
 
   nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-    let denied = (error as? CLError)?.code == .denied
+    // iOS also reports "denied" while the permission question is still on screen, so the
+    // permission message is shown only once the answer really is no.
+    let status = manager.authorizationStatus
+    let refused = status == .denied || status == .restricted
     Task { @MainActor in
-      self.onProblem?(denied ? "Location permission needed. Turn it on in Settings." : "No GPS position yet.")
+      self.onProblem?(refused ? "Location permission needed. Turn it on in Settings." : "No GPS position yet.")
     }
   }
 

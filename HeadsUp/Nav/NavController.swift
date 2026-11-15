@@ -32,6 +32,14 @@ final class NavController {
   /// Feet to the next turn, for the screen.
   private(set) var feetToNextTurn: Int?
   private(set) var feetToDestination: Int?
+  /// Distance walked along the route, metres. For the route map.
+  private(set) var along = 0.0
+  /// Distance from the route line, metres.
+  private(set) var offRouteMetres = 0.0
+  /// True while a saved walk is being replayed instead of live GPS.
+  private(set) var isReplaying = false
+  /// Result of the last "save walk" action, for the screen.
+  private(set) var walkMessage: String?
 
   /// Seconds between the spoken confirmation and the start of guidance.
   var confirmSeconds = 3.0
@@ -53,6 +61,10 @@ final class NavController {
 
   @ObservationIgnored private(set) var engine = NavigationEngine()
   @ObservationIgnored private var location: any LocationProvider
+  /// The live GPS provider, kept so it can be restored after a replay.
+  @ObservationIgnored private let liveLocation: any LocationProvider
+  /// Positions received during the current live route, so the walk can be saved for replay.
+  @ObservationIgnored private var walkFixes: [LocationFix] = []
   @ObservationIgnored private let listener = VoiceListener()
   @ObservationIgnored private var stateBeforeListening = State.idle
   @ObservationIgnored private var confirmTask: Task<Void, Never>?
@@ -65,7 +77,9 @@ final class NavController {
   var isNavigating: Bool { state == .guiding }
 
   init(location: (any LocationProvider)? = nil) {
-    self.location = location ?? CoreLocationProvider()
+    let live = location ?? CoreLocationProvider()
+    self.location = live
+    liveLocation = live
     let listener = self.listener
     listen = {
       if let problem = await listener.requestPermission() {
@@ -84,6 +98,9 @@ final class NavController {
   /// Swap live GPS for a replayed walk, or back.
   func use(location provider: any LocationProvider) {
     location.stop()
+    location.onFix = nil  // a late report from the old source must not leak into the new one
+    location.onProblem = nil
+    locationProblem = nil
     location = provider
     attachLocation()
     provider.start()
@@ -240,6 +257,9 @@ final class NavController {
   private func beginGuidance() {
     guard let destination else { return }
     engine.start(destination.route)
+    walkFixes = []
+    along = 0
+    offRouteMetres = 0
     state = .guiding
     statusText = "Going to \(destination.name)"
     if let fix = lastFix { received(fix) }  // speak the start cue now, not at the next GPS fix
@@ -256,6 +276,70 @@ final class NavController {
     state = .idle
     restoreStatus()
     stopSpeech()
+    endReplay()
+  }
+
+  // MARK: Replay and saved walks
+
+  /// Replays a saved walk: its route is loaded and its positions are fed in at the recorded pace
+  /// (times `speed`). Needs no GPS and no network.
+  func replay(_ walk: SavedWalk, speed: Double = 1) {
+    stopNavigation()
+    let route = walk.navRoute
+    candidates = [
+      DestinationCandidate(
+        name: walk.destinationName, street: nil,
+        point: route.destination ?? route.path.point(at: route.path.length),
+        route: route, distanceMetres: route.path.length,
+        minutes: Int((route.path.length / 1.35 / 60).rounded()))
+    ]
+    candidateIndex = 0
+    isReplaying = true
+    lastFix = nil
+    use(location: GPXReplayProvider(fixes: walk.locationFixes, speed: speed))
+    beginGuidance()
+    statusText = "Replaying a walk to \(walk.destinationName)"
+  }
+
+  private func endReplay() {
+    guard isReplaying else { return }
+    isReplaying = false
+    lastFix = nil
+    use(location: liveLocation)
+  }
+
+  /// Saves the route being walked and the positions received so far, for replay later.
+  func saveWalk() {
+    guard let destination, !isReplaying, walkFixes.count >= 5 else {
+      walkMessage = "Nothing to save yet. Walk a route first."
+      return
+    }
+    store(SavedWalk(name: Self.walkName(destination.name), route: destination.route, fixes: walkFixes))
+  }
+
+  /// Saves the current route with a made-up steady walk along it, so a route found at the table
+  /// can be replayed without anyone having walked it.
+  func saveSimulatedWalk() {
+    guard let destination, !isReplaying else {
+      walkMessage = "Choose a destination first."
+      return
+    }
+    store(SavedWalk.simulated(name: Self.walkName(destination.name) + " simulated", route: destination.route))
+  }
+
+  private func store(_ walk: SavedWalk) {
+    do {
+      let url = try walk.save()
+      walkMessage = "Saved \(url.lastPathComponent)"
+    } catch {
+      walkMessage = "Could not save the walk: \(error.localizedDescription)"
+    }
+  }
+
+  private static func walkName(_ destination: String) -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "MMM d HHmm"
+    return "\(destination) \(formatter.string(from: Date()))"
   }
 
   // MARK: Guidance
@@ -263,7 +347,10 @@ final class NavController {
   private func received(_ fix: LocationFix) {
     lastFix = fix
     guard state == .guiding || (state == .listening && stateBeforeListening == .guiding) else { return }
+    if !isReplaying { walkFixes.append(fix) }
     let cues = engine.update(fix)
+    along = engine.along
+    offRouteMetres = engine.offset
     feetToNextTurn = engine.nextManeuver.map { Geo.spokenFeet(metres: max(0, $0.distance)) }
     feetToDestination = Geo.spokenFeet(metres: engine.distanceToDestination)
     for cue in cues { say(cue) }
@@ -273,6 +360,7 @@ final class NavController {
       if state == .guiding {
         state = .arrived
         statusText = "Arrived at \(destination?.name ?? "the destination")"
+        endReplay()
       }
     case .idle, .guiding: break
     }
@@ -295,7 +383,8 @@ final class NavController {
   }
 
   private func requestReroute(from fix: LocationFix) {
-    guard rerouteTask == nil, let destination else { return }
+    // A replayed walk has no network to ask; its positions follow its own route anyway.
+    guard rerouteTask == nil, !isReplaying, let destination else { return }
     statusText = "Rerouting"
     rerouteTask = Task { [weak self] in
       defer { self?.rerouteTask = nil }

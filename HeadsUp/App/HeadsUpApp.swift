@@ -30,6 +30,8 @@ struct HeadsUpApp: App {
               .tabItem { Label("Main", systemImage: "eye") }
             DebugView(model: model)
               .tabItem { Label("Debug", systemImage: "viewfinder") }
+            NavDebugView(model: model)
+              .tabItem { Label("Route", systemImage: "point.topleft.down.to.point.bottomright.curvepath") }
             SettingsView(model: model)
               .tabItem { Label("Settings", systemImage: "slider.horizontal.3") }
           }

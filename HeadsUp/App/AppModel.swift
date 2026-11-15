@@ -192,6 +192,22 @@ final class AppModel {
 
   var sourceName: String { source.displayName }
 
+  /// What the speech arbiter is holding back right now, for the Route debug screen.
+  var waitingSpeech: String? { speech.waitingText }
+
+  /// The table demo, from one control: replays a saved walk for navigation and, if a recorded
+  /// video is available, plays it through the hazard pipeline at the same time.
+  /// Needs no GPS, no network and no glasses. The hazard check still uses the phone's real
+  /// motion sensors, so a wearer standing at the table counts as standing still.
+  func startReplayDemo(_ walk: SavedWalk, speed: Double = 1) {
+    if !isWatching {
+      refreshVideoFiles()
+      if !videoFiles.isEmpty { sourceKind = .videoFile }
+      start()
+    }
+    nav.replay(walk, speed: speed)
+  }
+
   /// Navigation speaks through the same speech output as hazards, which always puts hazards first.
   private func connectNavigation() {
     let speech = self.speech
