@@ -227,3 +227,10 @@ Entry template:
 - Debug tab shows "Step wobble" to measure the threshold (`stepWobbleStart` and `stepWobbleStop`, measured 2026-11-15).
 - Known limit: shaking the phone counts as walking (shake only, no step rhythm check). A bike or car ride also shakes it.
 - Alternatives considered: pedometer step counts (still a few seconds of lag, no fix for the stop lag); demo workaround only; assuming walking when unsure (hides real movers, rejected).
+
+### D-35 · Moving cutoff lowered from 1.0 to 0.5 m/s
+- Date: 2026-11-15 · Status: Decided · By: Pradyun
+- Finding (171 s hallway screen recording): a teammate WALKING at a walking wearer read "own" 0.8–0.9 m/s, under the 1.0 cutoff, so they were labelled "walking into" and the band stayed silent until the box was cut off at about 1.5 m. A runner (own 1.7–2.3 m/s) warned from about 7 m. Standing people read about −0.2 to +0.4 m/s.
+- Decision: `MeasuredConstants.movingCutoff = 0.5`.
+- Risk: a standing person whose "own" reading spikes above 0.5 for 3 frames now warns. Raise toward 0.6 if that shows up.
+- Not changed: the tau level thresholds (4 / 2.5 / 1.5 s). They are in Settings and saved on the phone, so they can be tried live without a rebuild.
